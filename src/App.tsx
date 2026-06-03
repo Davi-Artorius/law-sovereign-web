@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search, PlusCircle, Layers, LayoutGrid, Stethoscope,
-  X, ShieldCheck, BarChart2
+  X, ShieldCheck, BarChart2, Menu
 } from 'lucide-react';
 
 // Tipos e Constantes
@@ -30,6 +30,15 @@ function useToast() {
 
 // ─── APP PRINCIPAL ───────────────────────────────────────────────────────────
 function AppInner() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
   const [clients, setClients] = useState<Client[]>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,9 +282,14 @@ function AppInner() {
 
   return (
     <div className="flex h-screen bg-[#020507] text-[#e8edf2] font-sans overflow-hidden">
-      
+
+      {/* Backdrop mobile */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/70" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 bg-[#06101a] border-r border-[#ffffff12] flex flex-col">
+      <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transition-transform duration-300' : 'relative flex-shrink-0'} w-64 bg-[#06101a] border-r border-[#ffffff12] flex flex-col ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
         <div className="p-6 border-b border-[#ffffff0a]">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-gold font-bold italic">Ł</div>
@@ -297,7 +311,7 @@ function AppInner() {
             return (
               <button
                 key={item.id}
-                onClick={() => { setView(item.id as any); setSelectedClient(null); }}
+                onClick={() => { setView(item.id as any); setSelectedClient(null); if (isMobile) setSidebarOpen(false); }}
                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${active ? 'bg-gold/10 border-l-2 border-gold' : 'hover:bg-white/5'}`}
               >
                 <div className="flex items-center gap-3 text-left">
@@ -331,9 +345,16 @@ function AppInner() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-[#020507]">
         <header className="h-16 flex items-center justify-between px-8 border-b border-[#ffffff0a] bg-[#06101a]/80 backdrop-blur-md flex-shrink-0">
-          <div>
-            <h2 className="font-serif text-xl font-medium text-slate-100">{view}</h2>
-            <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em]">{view === 'Dashboard' ? 'Operacional' : 'Protocolo'}</p>
+          <div className="flex items-center gap-3">
+            {isMobile && (
+              <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-slate-400 hover:text-slate-200 transition-colors">
+                <Menu size={20} />
+              </button>
+            )}
+            <div>
+              <h2 className="font-serif text-xl font-medium text-slate-100">{view}</h2>
+              <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em]">{view === 'Dashboard' ? 'Operacional' : 'Protocolo'}</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -351,9 +372,9 @@ function AppInner() {
             )}
             <button 
               onClick={() => setIsAddingClient(true)}
-              className="flex items-center gap-2 h-9 px-5 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
+              className="flex items-center gap-2 h-9 px-4 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
             >
-              <PlusCircle size={14} /> Novo Dossier
+              <PlusCircle size={14} /> {!isMobile && 'Novo Dossier'}
             </button>
           </div>
         </header>
@@ -395,7 +416,7 @@ function AppInner() {
               </div>
               
               {selectedClient && (
-                <DetailPanel 
+                <DetailPanel
                   client={selectedClient}
                   events={events.filter(e => e.clientId === selectedClient.id)}
                   newEvent={newEventContent}
@@ -408,6 +429,7 @@ function AppInner() {
                   onClearAttachment={() => setPendingAttachment(null)}
                   onDelete={deleteClient}
                   onUpdateClient={updateClientData}
+                  isMobile={isMobile}
                 />
               )}
             </div>
