@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { X, Trash2, Stethoscope, Paperclip, Briefcase, Calculator, FileText } from 'lucide-react';
+import { X, Trash2, Stethoscope, Paperclip, Briefcase, Calculator, FileText, Phone } from 'lucide-react';
 import type { Client, TimelineEvent, Attachment } from '../domain';
 import { EVENT_META } from '../constants';
 import { getInitials, avatarPalette } from '../utils/helpers';
@@ -39,6 +39,8 @@ export function DetailPanel({
   const [costVal, setCostVal] = useState('');
   const [editingChance, setEditingChance] = useState(false);
   const [chanceVal, setChanceVal] = useState('');
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [phoneVal, setPhoneVal] = useState('');
   
   // Maelstrom: Helper para converter Base64 em Blob (Necessário para visualizar PDFs/Arquivos em nova aba)
   const b64toBlob = (b64Data: string, contentType = '', sliceSize = 512) => {
@@ -73,6 +75,28 @@ export function DetailPanel({
             <div>
               <div style={{ fontFamily: 'Georgia,serif', fontSize: 17, fontWeight: 500, color: '#e8edf2' }}>{c.name}</div>
               <div style={{ fontSize: 10, color: '#3d5570', marginTop: 2 }}>ID-{c.id.slice(-4).toUpperCase()} · {c.area || c.status}</div>
+              {editingPhone ? (
+                <input
+                  autoFocus
+                  type="tel"
+                  value={phoneVal}
+                  onChange={e => setPhoneVal(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { onUpdateClient?.(c.id, { phone: phoneVal || undefined }); setEditingPhone(false); }
+                    if (e.key === 'Escape') setEditingPhone(false);
+                  }}
+                  onBlur={() => { onUpdateClient?.(c.id, { phone: phoneVal || undefined }); setEditingPhone(false); }}
+                  placeholder="(11) 99999-9999"
+                  style={{ marginTop: 4, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(200,169,110,0.4)', background: 'rgba(200,169,110,0.08)', color: '#c8a96e', fontSize: 11, outline: 'none', width: 160 }}
+                />
+              ) : (
+                <div
+                  onClick={() => { setPhoneVal(c.phone || ''); setEditingPhone(true); }}
+                  style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: c.phone ? '#c8a96e' : '#3d5570' }}
+                >
+                  <Phone size={11} /> {c.phone || 'Adicionar telefone'}
+                </div>
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

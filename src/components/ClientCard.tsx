@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Trash2, ChevronRight } from 'lucide-react';
+import { Clock, Trash2, ChevronRight, Phone } from 'lucide-react';
 import type { Client } from '../domain';
 import { AREA_STYLE } from '../constants';
 import { getInitials, avatarPalette } from '../utils/helpers';
@@ -62,6 +62,7 @@ export function ClientCard({ client: c, selected, onSelect, onPromote, onDelete 
         </div>
       </div>
       <p style={{ fontSize: 12, color: '#5a7a94', lineHeight: 1.6, margin: 0, fontStyle: 'italic', borderLeft: '2px solid rgba(100,160,220,0.1)', paddingLeft: 10 }}>{c.case}</p>
+      {c.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#c8a96e' }}><Phone size={11}/> {c.phone}</div>}
       
       {/* --- LAW SOVEREIGN v3.5: INDICADORES ESTRATÉGICOS --- */}
       {(c.chanceOfSuccess || c.costOfWaiting || c.isPaperLead) && (

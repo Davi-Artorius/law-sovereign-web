@@ -29,5 +29,6 @@ export interface Client {
   costOfWaiting?: number;
   missingProofs?: string;
   isPaperLead?: boolean;
+  phone?: string;
   createdAt: string; // ISO String
 }
