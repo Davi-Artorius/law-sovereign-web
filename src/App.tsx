@@ -361,10 +361,10 @@ function AppInner() {
             {view !== 'Dashboard' && (
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
-                <input 
-                  type="text" 
-                  placeholder="Pesquisar..." 
-                  className="pl-9 pr-4 h-9 w-56 rounded-full bg-slate-900/50 border border-[#ffffff12] text-xs focus:outline-none focus:border-gold/30 transition-colors"
+                <input
+                  type="text"
+                  placeholder="Pesquisar..."
+                  className="pl-9 pr-4 h-9 w-32 md:w-56 rounded-full bg-slate-900/50 border border-[#ffffff12] text-xs focus:outline-none focus:border-gold/30 transition-colors"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />

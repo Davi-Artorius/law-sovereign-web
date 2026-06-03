@@ -54,7 +54,7 @@ export function DashboardView({ clients, counts, weekData, forgotten, onReset }:
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
         {[
           { label: 'Fluxo de Triagem', value: counts.triagem, icon: Layers, color: '#60a5fa', sub: 'Aguardando Aprovação' },
           { label: 'Acompanhamento Ativo', value: counts.evolucao, icon: LayoutGrid, color: '#10b981', sub: 'Hub de Evolução' },
