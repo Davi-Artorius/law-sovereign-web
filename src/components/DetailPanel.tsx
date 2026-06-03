@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { X, Trash2, Stethoscope, Paperclip, Briefcase, Calculator, FileText, Phone } from 'lucide-react';
 import type { Client, TimelineEvent, Attachment } from '../domain';
 import { EVENT_META } from '../constants';
@@ -17,21 +17,23 @@ interface DetailPanelProps {
   onClearAttachment: () => void;
   onDelete: (id: string) => void;
   onUpdateClient?: (id: string, data: Partial<Client>) => void;
+  isMobile?: boolean;
 }
 
-export function DetailPanel({ 
-  client: c, 
-  events, 
-  newEvent, 
-  pendingAttachment, 
-  onEventChange, 
-  onAddEvent, 
-  onClose, 
-  onToggleEnc, 
-  onAttachFile, 
-  onClearAttachment, 
+export function DetailPanel({
+  client: c,
+  events,
+  newEvent,
+  pendingAttachment,
+  onEventChange,
+  onAddEvent,
+  onClose,
+  onToggleEnc,
+  onAttachFile,
+  onClearAttachment,
   onDelete,
-  onUpdateClient
+  onUpdateClient,
+  isMobile
 }: DetailPanelProps) {
   const pal = avatarPalette(c.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,8 +68,12 @@ export function DetailPanel({
     a.click(); 
   };
 
+  const panelStyle: React.CSSProperties = isMobile
+    ? { position: 'fixed', inset: 0, zIndex: 50, background: '#0a1520', display: 'flex', flexDirection: 'column', overflowY: 'auto' }
+    : { width: 420, flexShrink: 0, background: '#0a1520', borderLeft: '1px solid rgba(100,160,220,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto' };
+
   return (
-    <aside style={{ width: 420, flexShrink: 0, background: '#0a1520', borderLeft: '1px solid rgba(100,160,220,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+    <aside style={panelStyle}>
       <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(100,160,220,0.06)', background: '#06101a' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
