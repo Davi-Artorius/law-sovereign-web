@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: law_sovereign_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: sovereign_pass
+      POSTGRES_DB: law_sovereign
+    ports:
+      - "5432:5432"
+    volumes:
+      - law_sovereign_data:/var/lib/postgresql/data
+
+volumes:
+  law_sovereign_data:
