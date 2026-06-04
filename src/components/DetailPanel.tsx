@@ -44,6 +44,8 @@ export function DetailPanel({
   const [chanceVal, setChanceVal] = useState('');
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneVal, setPhoneVal] = useState('');
+  const [editingCase, setEditingCase] = useState(false);
+  const [caseVal, setCaseVal] = useState('');
   
   // Maelstrom: Helper para converter Base64 em Blob (Necessário para visualizar PDFs/Arquivos em nova aba)
   const b64toBlob = (b64Data: string, contentType = '', sliceSize = 512) => {
@@ -102,6 +104,28 @@ export function DetailPanel({
                   style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: c.phone ? '#c8a96e' : '#3d5570' }}
                 >
                   <Phone size={11} /> {c.phone || 'Adicionar telefone'}
+                </div>
+              )}
+              {editingCase ? (
+                <textarea
+                  autoFocus
+                  value={caseVal}
+                  onChange={e => setCaseVal(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') setEditingCase(false);
+                    if (e.key === 'Enter' && e.ctrlKey) { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }
+                  }}
+                  onBlur={() => { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }}
+                  rows={3}
+                  style={{ marginTop: 6, width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(100,160,220,0.3)', background: 'rgba(100,160,220,0.05)', color: '#8a9fb5', fontSize: 11, outline: 'none', resize: 'none' }}
+                />
+              ) : (
+                <div
+                  onClick={() => { setCaseVal(c.case || ''); setEditingCase(true); }}
+                  style={{ marginTop: 6, fontSize: 11, color: '#3d5570', cursor: 'pointer', lineHeight: 1.4 }}
+                  title="Clique para editar"
+                >
+                  {c.case || 'Adicionar descrição do caso'}
                 </div>
               )}
             </div>
