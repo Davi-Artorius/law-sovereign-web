@@ -106,28 +106,6 @@ export function DetailPanel({
                   <Phone size={11} /> {c.phone || 'Adicionar telefone'}
                 </div>
               )}
-              {editingCase ? (
-                <textarea
-                  autoFocus
-                  value={caseVal}
-                  onChange={e => setCaseVal(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Escape') setEditingCase(false);
-                    if (e.key === 'Enter' && e.ctrlKey) { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }
-                  }}
-                  onBlur={() => { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }}
-                  rows={3}
-                  style={{ marginTop: 6, width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(100,160,220,0.3)', background: 'rgba(100,160,220,0.05)', color: '#8a9fb5', fontSize: 11, outline: 'none', resize: 'none' }}
-                />
-              ) : (
-                <div
-                  onClick={() => { setCaseVal(c.case || ''); setEditingCase(true); }}
-                  style={{ marginTop: 6, fontSize: 11, color: '#3d5570', cursor: 'pointer', lineHeight: 1.4 }}
-                  title="Clique para editar"
-                >
-                  {c.case || 'Adicionar descrição do caso'}
-                </div>
-              )}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -203,6 +181,32 @@ export function DetailPanel({
                 <Briefcase size={12}/> {c.chanceOfSuccess ? `${c.chanceOfSuccess}% ÊXITO` : 'RANKING DE ÊXITO'}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Descrição do caso — editável */}
+        {editingCase ? (
+          <textarea
+            autoFocus
+            value={caseVal}
+            onChange={e => setCaseVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') setEditingCase(false);
+              if (e.key === 'Enter' && e.ctrlKey) { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }
+            }}
+            onBlur={() => { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }}
+            rows={3}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(100,160,220,0.3)', background: 'rgba(100,160,220,0.05)', color: '#8a9fb5', fontSize: 12, outline: 'none', resize: 'none', marginBottom: 10 }}
+          />
+        ) : (
+          <div
+            onClick={() => { setCaseVal(c.case || ''); setEditingCase(true); }}
+            style={{ fontSize: 12, color: c.case ? '#8a9fb5' : '#3d5570', cursor: 'pointer', lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid transparent', marginBottom: 10, transition: 'border 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.border = '1px solid rgba(100,160,220,0.15)')}
+            onMouseLeave={e => (e.currentTarget.style.border = '1px solid transparent')}
+            title="Clique para editar descrição do caso"
+          >
+            {c.case || 'Adicionar descrição do caso...'}
           </div>
         )}
 
