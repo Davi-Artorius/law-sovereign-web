@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Trash2, Stethoscope, Paperclip, Briefcase, Calculator, FileText, Phone } from 'lucide-react';
+import { X, Trash2, Stethoscope, Paperclip, Briefcase, Calculator, FileText, Phone, Share2 } from 'lucide-react';
 import type { Client, TimelineEvent, Attachment } from '../domain';
 import { EVENT_META } from '../constants';
 import { getInitials, avatarPalette } from '../utils/helpers';
@@ -37,6 +37,7 @@ export function DetailPanel({
 }: DetailPanelProps) {
   const pal = avatarPalette(c.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
   const [editingCost, setEditingCost] = useState(false);
   const [costVal, setCostVal] = useState('');
   const [editingChance, setEditingChance] = useState(false);
@@ -106,6 +107,18 @@ export function DetailPanel({
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/portal/${c.id}`;
+                navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              style={{ background: copied ? 'rgba(16,185,129,0.1)' : 'rgba(100,160,220,0.06)', border: copied ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(100,160,220,0.1)', borderRadius: 8, padding: 6, cursor: 'pointer', color: copied ? '#10b981' : '#8a9fb5', display: 'flex', transition: 'all 0.2s' }}
+              title="Copiar link do Portal do Cliente"
+            >
+              <Share2 size={16} />
+            </button>
             <button onClick={() => onDelete(c.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: 6, cursor: 'pointer', color: '#fca5a5', display: 'flex' }} title="Excluir Dossier"><Trash2 size={16} /></button>
             <button onClick={onClose} style={{ background: 'rgba(100,160,220,0.06)', border: '1px solid rgba(100,160,220,0.1)', borderRadius: 8, padding: 6, cursor: 'pointer', color: '#8a9fb5', display: 'flex' }}><X size={16} /></button>
           </div>

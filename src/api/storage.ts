@@ -35,8 +35,13 @@ export const storage = {
   },
 
   nuclearReset: async (): Promise<void> => {
-    // Sage: O Reset agora exige cautela, mas por enquanto limparemos o local para sincronizar
     localStorage.clear();
     window.location.reload();
+  },
+
+  runOCR: async (imageDataUrl: string): Promise<{ name?: string; phone?: string; area?: string; case?: string }> => {
+    const base64 = imageDataUrl.split(',')[1];
+    const response = await axios.post(`${API_URL}/ocr`, { image: base64, mimeType: imageDataUrl.split(';')[0].split(':')[1] });
+    return response.data;
   }
 };

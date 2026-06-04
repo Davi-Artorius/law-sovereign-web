@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import {
   Search, PlusCircle, Layers, LayoutGrid, Stethoscope,
-  X, ShieldCheck, BarChart2, Menu
+  X, ShieldCheck, BarChart2, Menu, Camera
 } from 'lucide-react';
 
 // Tipos e Constantes
@@ -15,6 +16,8 @@ import { DashboardView } from './components/DashboardView';
 import { ClientCard } from './components/ClientCard';
 import { DetailPanel } from './components/DetailPanel';
 import { LoginScreen } from './components/LoginScreen';
+import { CapturePage } from './pages/CapturePage';
+import { PortalPage } from './pages/PortalPage';
 
 // ─── HOOKS CUSTOMIZADOS ──────────────────────────────────────────────────────
 function useToast() {
@@ -73,6 +76,28 @@ function AppInner() {
   const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
   
   const toast = useToast();
+  const ocrInputRef = useRef<HTMLInputElement>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+
+  const handleOCR = useCallback(async (file: File) => {
+    setOcrLoading(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target?.result as string;
+      try {
+        const result = await storage.runOCR(dataUrl);
+        if (result.name) setNewClientName(result.name);
+        if (result.area && AREAS.includes(result.area as any)) setNewClientArea(result.area);
+        if (result.case) setNewClientCase(result.case);
+        toast.show('Documento digitalizado. Confira os campos.');
+      } catch {
+        toast.show('Erro ao digitalizar. Preencha manualmente.');
+      } finally {
+        setOcrLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  }, [toast]);
 
   // ─── ACTIONS (PostgreSQL Sync) ──────────────────────────────────────────────
   
@@ -480,9 +505,35 @@ function AppInner() {
                 </select>
               </div>
 
-              <button 
+              <div className="flex items-center gap-3 my-1">
+                <div className="flex-1 h-px bg-white/5" />
+                <span className="text-[9px] text-slate-600 uppercase tracking-widest">ou</span>
+                <div className="flex-1 h-px bg-white/5" />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => ocrInputRef.current?.click()}
+                disabled={ocrLoading}
+                className="w-full h-11 rounded-xl border border-[#ffffff12] text-slate-500 text-xs font-medium hover:border-gold/20 hover:text-gold/60 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+              >
+                {ocrLoading
+                  ? <><div className="w-3.5 h-3.5 border border-gold/30 border-t-gold rounded-full animate-spin" /> Extraindo dados...</>
+                  : <><Camera size={14} /> Digitalizar Documento</>
+                }
+              </button>
+              <input
+                ref={ocrInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+                onChange={e => { if (e.target.files?.[0]) handleOCR(e.target.files[0]); e.target.value = ''; }}
+              />
+
+              <button
                 onClick={addClient}
-                className="w-full h-12 mt-4 rounded-xl bg-gold/10 border border-gold/30 text-gold font-bold text-xs uppercase tracking-[0.2em] hover:bg-gold/20 transition-all shadow-lg active:scale-[0.98]"
+                className="w-full h-12 mt-2 rounded-xl bg-gold/10 border border-gold/30 text-gold font-bold text-xs uppercase tracking-[0.2em] hover:bg-gold/20 transition-all shadow-lg active:scale-[0.98]"
               >
                 Selar e Arquivar Dossier
               </button>
@@ -508,7 +559,7 @@ function AppInner() {
   );
 }
 
-export default function App() {
+function AuthGate() {
   const [authenticated, setAuthenticated] = useState(() => {
     const pw = import.meta.env.VITE_APP_PASSWORD as string | undefined;
     if (!pw) return true;
@@ -523,4 +574,14 @@ export default function App() {
   }
 
   return <AppInner />;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/capture" element={<CapturePage />} />
+      <Route path="/portal/:id" element={<PortalPage />} />
+      <Route path="/*" element={<AuthGate />} />
+    </Routes>
+  );
 }
