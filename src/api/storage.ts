@@ -34,6 +34,15 @@ export const storage = {
     return response.data;
   },
 
+  deleteEvent: async (id: string): Promise<void> => {
+    await axios.delete(`${API_URL}/events/${id}`);
+  },
+
+  getClientEvents: async (clientId: string): Promise<TimelineEvent[]> => {
+    const response = await axios.get(`${API_URL}/clients/${clientId}/events`);
+    return response.data;
+  },
+
   nuclearReset: async (): Promise<void> => {
     localStorage.clear();
     window.location.reload();

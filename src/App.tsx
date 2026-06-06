@@ -79,6 +79,18 @@ function AppInner() {
   const ocrInputRef = useRef<HTMLInputElement>(null);
   const [ocrLoading, setOcrLoading] = useState(false);
 
+  // Performance: ao abrir um dossiê, carrega os eventos COMPLETOS (com anexos) sob demanda.
+  // A lista vem leve (sem base64), então o load inicial é rápido.
+  const selectedId = selectedClient?.id;
+  useEffect(() => {
+    if (!selectedId) return;
+    let cancelled = false;
+    storage.getClientEvents(selectedId).then(full => {
+      if (!cancelled) setEvents(prev => [...prev.filter(e => e.clientId !== selectedId), ...full]);
+    }).catch(() => { /* mantém os eventos leves se falhar */ });
+    return () => { cancelled = true; };
+  }, [selectedId]);
+
   const handleOCR = useCallback(async (file: File) => {
     setOcrLoading(true);
     const reader = new FileReader();
@@ -183,6 +195,17 @@ function AppInner() {
       toast.show('Erro ao salvar evento (verifique tamanho do anexo).');
     }
   }, [selectedClient, newEventContent, pendingAttachment, toast]);
+
+  const deleteTimelineEvent = useCallback(async (eventId: string) => {
+    if (!window.confirm('Remover este registro permanentemente?')) return;
+    try {
+      await storage.deleteEvent(eventId);
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+      toast.show('Registro removido.');
+    } catch (err) {
+      toast.show('Erro ao remover registro.');
+    }
+  }, [toast]);
 
   const toggleEncaminhamento = useCallback(async (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -290,10 +313,10 @@ function AppInner() {
   }, [clients, events]);
 
   if (loading) return (
-    <div className="h-screen w-full flex items-center justify-center bg-[#020507]">
+    <div className="h-screen w-full flex items-center justify-center bg-[#0a121e]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
-        <p className="font-serif text-xs text-gold/60 uppercase tracking-widest">Sincronizando com PostgreSQL...</p>
+        <p className="font-serif text-sm text-gold/70 uppercase tracking-widest">Sincronizando com PostgreSQL...</p>
       </div>
     </div>
   );
@@ -306,7 +329,7 @@ function AppInner() {
   ];
 
   return (
-    <div className="flex h-screen bg-[#020507] text-[#e8edf2] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#0a121e] text-[#e8edf2] font-sans overflow-hidden">
 
       {/* Backdrop mobile */}
       {isMobile && sidebarOpen && (
@@ -314,23 +337,23 @@ function AppInner() {
       )}
 
       {/* Sidebar */}
-      <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transition-transform duration-300' : 'relative flex-shrink-0'} w-64 bg-[#06101a] border-r border-[#ffffff12] flex flex-col ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
+      <aside className={`${isMobile ? 'fixed inset-y-0 left-0 z-50 transition-transform duration-300' : 'relative flex-shrink-0'} w-64 bg-[#0e1827] border-r border-[#ffffff12] flex flex-col ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}`}>
         <div className="p-6 border-b border-[#ffffff0a]">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-gold font-bold italic">Ł</div>
+          <div className="flex items-center gap-3 mb-2.5">
+            <div className="w-10 h-10 rounded-full border-2 border-gold grid place-items-center font-serif text-xl text-gold font-bold">§</div>
             <div>
-              <h1 className="font-serif text-sm font-semibold tracking-wide">LAW SOVEREIGN</h1>
-              <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em]">Gestão de Elite</p>
+              <h1 className="font-serif text-lg font-bold tracking-wide leading-none">LAW <span className="text-gold">SOVEREIGN</span></h1>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mt-1">Gestão de Elite</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 pl-11">
+          <div className="flex items-center gap-2 pl-[52px]">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[9px] text-emerald-500 uppercase tracking-widest">Soberania Ativa</span>
+            <span className="text-[10px] text-emerald-400 uppercase tracking-widest">Soberania Ativa</span>
           </div>
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <p className="text-[9px] text-slate-600 uppercase tracking-[0.2em] px-3 mb-2">Navegação</p>
+          <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] px-3 mb-2.5">Navegação</p>
           {NAV_ITEMS.map(item => {
             const active = view === item.id;
             return (
@@ -340,14 +363,14 @@ function AppInner() {
                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-all group ${active ? 'bg-gold/10 border-l-2 border-gold' : 'hover:bg-white/5'}`}
               >
                 <div className="flex items-center gap-3 text-left">
-                  <item.icon size={16} className={active ? 'text-gold' : 'text-slate-500 group-hover:text-slate-300'} />
+                  <item.icon size={18} className={active ? 'text-gold' : 'text-slate-400 group-hover:text-slate-200'} />
                   <div>
-                    <div className={`text-xs font-medium ${active ? 'text-gold' : 'text-slate-400 group-hover:text-slate-200'}`}>{item.label}</div>
-                    <div className="text-[8px] text-slate-600 uppercase">{item.sub}</div>
+                    <div className={`text-sm font-medium ${active ? 'text-gold' : 'text-slate-300 group-hover:text-slate-100'}`}>{item.label}</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wide">{item.sub}</div>
                   </div>
                 </div>
                 {item.count !== undefined && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${active ? 'bg-gold/20 text-gold border border-gold/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${active ? 'bg-gold/20 text-gold border border-gold/30' : 'bg-blue-500/10 text-blue-300 border border-blue-500/20'}`}>
                     {item.count}
                   </span>
                 )}
@@ -358,18 +381,18 @@ function AppInner() {
 
         <div className="p-4 border-t border-[#ffffff0a]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center font-serif text-[10px] text-gold font-bold">AR</div>
+            <div className="w-9 h-9 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-xs text-gold font-bold">AR</div>
             <div>
-              <p className="text-[11px] font-semibold text-slate-200">Dr. Arquiteto</p>
-              <p className="text-[9px] text-slate-500 uppercase tracking-tighter">Sovereign Admin</p>
+              <p className="text-sm font-semibold text-slate-100">Dr. Arquiteto</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wide">Sovereign Admin</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#020507]">
-        <header className="h-16 flex items-center justify-between px-8 border-b border-[#ffffff0a] bg-[#06101a]/80 backdrop-blur-md flex-shrink-0">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#0a121e]">
+        <header className="h-16 flex items-center justify-between px-8 border-b border-[#ffffff0a] bg-[#0e1827]/80 backdrop-blur-md flex-shrink-0">
           <div className="flex items-center gap-3">
             {isMobile && (
               <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-slate-400 hover:text-slate-200 transition-colors">
@@ -377,8 +400,8 @@ function AppInner() {
               </button>
             )}
             <div>
-              <h2 className="font-serif text-xl font-medium text-slate-100">{view}</h2>
-              <p className="text-[9px] text-slate-500 uppercase tracking-[0.2em]">{view === 'Dashboard' ? 'Operacional' : 'Protocolo'}</p>
+              <h2 className="font-serif text-2xl font-semibold text-slate-50 leading-none">{view}</h2>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mt-1">{view === 'Dashboard' ? 'Operacional' : 'Protocolo'}</p>
             </div>
           </div>
           
@@ -389,7 +412,7 @@ function AppInner() {
                 <input
                   type="text"
                   placeholder="Pesquisar..."
-                  className="pl-9 pr-4 h-9 w-32 md:w-56 rounded-full bg-slate-900/50 border border-[#ffffff12] text-xs focus:outline-none focus:border-gold/30 transition-colors"
+                  className="pl-9 pr-4 h-9 w-32 md:w-56 rounded-full bg-slate-900/50 border border-[#ffffff14] text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-gold/40 transition-colors"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -397,7 +420,7 @@ function AppInner() {
             )}
             <button 
               onClick={() => setIsAddingClient(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-full bg-gold/10 border border-gold/20 text-gold text-[10px] font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
+              className="flex items-center gap-2 h-9 px-4 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
             >
               <PlusCircle size={14} /> {!isMobile && 'Novo Dossier'}
             </button>
@@ -448,6 +471,7 @@ function AppInner() {
                   pendingAttachment={pendingAttachment}
                   onEventChange={setNewEventContent}
                   onAddEvent={addTimelineEvent}
+                  onDeleteEvent={deleteTimelineEvent}
                   onClose={() => setSelectedClient(null)}
                   onToggleEnc={toggleEncaminhamento}
                   onAttachFile={handleAttachFile}
@@ -465,18 +489,18 @@ function AppInner() {
       {/* Modal Cadastro */}
       {isAddingClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-[#0c1520] rounded-2xl border border-[#ffffff12] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md bg-[#111c2e] rounded-2xl border border-[#ffffff12] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h3 className="font-serif text-xl text-slate-100">Novo Dossier</h3>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Incorporação de Lead</p>
+                <h3 className="font-serif text-2xl font-semibold text-slate-50">Novo Dossier</h3>
+                <p className="text-[11px] text-slate-400 uppercase tracking-widest mt-1">Incorporação de Lead</p>
               </div>
               <button onClick={() => setIsAddingClient(false)} className="p-2 text-slate-500 hover:text-slate-300 transition-colors"><X size={20}/></button>
             </div>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[9px] text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
+                <label className="text-[11px] text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                 <input 
                   autoFocus 
                   className="w-full h-11 px-4 rounded-xl bg-slate-900/50 border border-[#ffffff12] text-sm text-slate-100 focus:outline-none focus:border-gold/40 transition-all"
@@ -486,7 +510,7 @@ function AppInner() {
               </div>
               
               <div className="space-y-1.5">
-                <label className="text-[9px] text-slate-500 uppercase tracking-widest ml-1">Descrição do Caso</label>
+                <label className="text-[11px] text-slate-400 uppercase tracking-widest ml-1">Descrição do Caso</label>
                 <textarea 
                   className="w-full h-24 p-4 rounded-xl bg-slate-900/50 border border-[#ffffff12] text-sm text-slate-400 focus:outline-none focus:border-gold/40 transition-all resize-none"
                   value={newClientCase}
@@ -495,19 +519,19 @@ function AppInner() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[9px] text-slate-500 uppercase tracking-widest ml-1">Área Atuação</label>
+                <label className="text-[11px] text-slate-400 uppercase tracking-widest ml-1">Área Atuação</label>
                 <select 
                   className="w-full h-11 px-4 rounded-xl bg-slate-900/50 border border-[#ffffff12] text-sm text-slate-200 focus:outline-none focus:border-gold/40 transition-all appearance-none cursor-pointer"
                   value={newClientArea}
                   onChange={e => setNewClientArea(e.target.value)}
                 >
-                  {AREAS.map(a => <option key={a} value={a} className="bg-[#0c1520]">{a}</option>)}
+                  {AREAS.map(a => <option key={a} value={a} className="bg-[#111c2e]">{a}</option>)}
                 </select>
               </div>
 
               <div className="flex items-center gap-3 my-1">
                 <div className="flex-1 h-px bg-white/5" />
-                <span className="text-[9px] text-slate-600 uppercase tracking-widest">ou</span>
+                <span className="text-[11px] text-slate-500 uppercase tracking-widest">ou</span>
                 <div className="flex-1 h-px bg-white/5" />
               </div>
 
