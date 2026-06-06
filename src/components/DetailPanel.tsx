@@ -11,6 +11,7 @@ interface DetailPanelProps {
   pendingAttachment: Attachment | null;
   onEventChange: (v: string) => void;
   onAddEvent: () => void;
+  onDeleteEvent?: (eventId: string) => void;
   onClose: () => void;
   onToggleEnc: (id: string) => void;
   onAttachFile: (file: File) => void;
@@ -27,6 +28,7 @@ export function DetailPanel({
   pendingAttachment,
   onEventChange,
   onAddEvent,
+  onDeleteEvent,
   onClose,
   onToggleEnc,
   onAttachFile,
@@ -72,18 +74,18 @@ export function DetailPanel({
   };
 
   const panelStyle: React.CSSProperties = isMobile
-    ? { position: 'fixed', inset: 0, zIndex: 50, background: '#0a1520', display: 'flex', flexDirection: 'column', overflowY: 'auto' }
-    : { width: 420, flexShrink: 0, background: '#0a1520', borderLeft: '1px solid rgba(100,160,220,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto' };
+    ? { position: 'fixed', inset: 0, zIndex: 50, background: '#0c1622', display: 'flex', flexDirection: 'column', overflowY: 'auto' }
+    : { width: 420, flexShrink: 0, background: '#0c1622', borderLeft: '1px solid rgba(100,160,220,0.08)', display: 'flex', flexDirection: 'column', overflowY: 'auto' };
 
   return (
     <aside style={panelStyle}>
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(100,160,220,0.06)', background: '#06101a' }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(100,160,220,0.06)', background: '#0e1827' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: pal.bg, border: `1px solid ${pal.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Georgia,serif', fontSize: 16, fontWeight: 700, color: pal.text }}>{getInitials(c.name)}</div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: pal.bg, border: `1px solid ${pal.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 16, fontWeight: 700, color: pal.text }}>{getInitials(c.name)}</div>
             <div>
-              <div style={{ fontFamily: 'Georgia,serif', fontSize: 17, fontWeight: 500, color: '#e8edf2' }}>{c.name}</div>
-              <div style={{ fontSize: 10, color: '#3d5570', marginTop: 2 }}>ID-{c.id.slice(-4).toUpperCase()} · {c.area || c.status}</div>
+              <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontWeight: 500, color: '#eef2f7' }}>{c.name}</div>
+              <div style={{ fontSize: 10, color: '#8295ad', marginTop: 2 }}>ID-{c.id.slice(-4).toUpperCase()} · {c.area || c.status}</div>
               {editingPhone ? (
                 <input
                   autoFocus
@@ -96,12 +98,12 @@ export function DetailPanel({
                   }}
                   onBlur={() => { onUpdateClient?.(c.id, { phone: phoneVal || undefined }); setEditingPhone(false); }}
                   placeholder="(11) 99999-9999"
-                  style={{ marginTop: 4, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(200,169,110,0.4)', background: 'rgba(200,169,110,0.08)', color: '#c8a96e', fontSize: 11, outline: 'none', width: 160 }}
+                  style={{ marginTop: 4, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(201,162,39,0.4)', background: 'rgba(201,162,39,0.08)', color: '#ddc063', fontSize: 11, outline: 'none', width: 160 }}
                 />
               ) : (
                 <div
                   onClick={() => { setPhoneVal(c.phone || ''); setEditingPhone(true); }}
-                  style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: c.phone ? '#c8a96e' : '#3d5570' }}
+                  style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 11, color: c.phone ? '#ddc063' : '#8295ad' }}
                 >
                   <Phone size={11} /> {c.phone || 'Adicionar telefone'}
                 </div>
@@ -131,7 +133,7 @@ export function DetailPanel({
           <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
             <button 
               onClick={() => onUpdateClient(c.id, { isPaperLead: !c.isPaperLead })}
-              style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.isPaperLead ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.isPaperLead ? 'rgba(168,85,247,0.12)' : 'rgba(100,160,220,0.04)', color: c.isPaperLead ? '#c084fc' : '#8a9fb5', fontSize: 9, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+              style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.isPaperLead ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.isPaperLead ? 'rgba(168,85,247,0.12)' : 'rgba(100,160,220,0.04)', color: c.isPaperLead ? '#c084fc' : '#8a9fb5', fontSize: 10, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
             >
               <FileText size={12}/> {c.isPaperLead ? 'LEAD DIGITALIZADO' : 'MARCAR COMO PAPEL'}
             </button>
@@ -152,7 +154,7 @@ export function DetailPanel({
             ) : (
               <button
                 onClick={() => { setCostVal(c.costOfWaiting?.toString() || ''); setEditingCost(true); }}
-                style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.costOfWaiting ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.costOfWaiting ? 'rgba(239,68,68,0.12)' : 'rgba(100,160,220,0.04)', color: c.costOfWaiting ? '#fca5a5' : '#8a9fb5', fontSize: 9, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.costOfWaiting ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.costOfWaiting ? 'rgba(239,68,68,0.12)' : 'rgba(100,160,220,0.04)', color: c.costOfWaiting ? '#fca5a5' : '#8a9fb5', fontSize: 10, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
               >
                 <Calculator size={12}/> {c.costOfWaiting ? `R$${c.costOfWaiting}/mês` : 'CUSTO DE ESPERAR'}
               </button>
@@ -176,7 +178,7 @@ export function DetailPanel({
             ) : (
               <button
                 onClick={() => { setChanceVal(c.chanceOfSuccess?.toString() || ''); setEditingChance(true); }}
-                style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.chanceOfSuccess ? '1px solid rgba(52,211,153,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.chanceOfSuccess ? 'rgba(52,211,153,0.12)' : 'rgba(100,160,220,0.04)', color: c.chanceOfSuccess ? '#34d399' : '#8a9fb5', fontSize: 9, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.chanceOfSuccess ? '1px solid rgba(52,211,153,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.chanceOfSuccess ? 'rgba(52,211,153,0.12)' : 'rgba(100,160,220,0.04)', color: c.chanceOfSuccess ? '#34d399' : '#8a9fb5', fontSize: 10, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
               >
                 <Briefcase size={12}/> {c.chanceOfSuccess ? `${c.chanceOfSuccess}% ÊXITO` : 'RANKING DE ÊXITO'}
               </button>
@@ -196,12 +198,12 @@ export function DetailPanel({
             }}
             onBlur={() => { onUpdateClient?.(c.id, { case: caseVal.trim() || c.case }); setEditingCase(false); }}
             rows={3}
-            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(100,160,220,0.3)', background: 'rgba(100,160,220,0.05)', color: '#8a9fb5', fontSize: 12, outline: 'none', resize: 'none', marginBottom: 10 }}
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(100,160,220,0.3)', background: 'rgba(100,160,220,0.05)', color: '#8a9fb5', fontSize: 13, outline: 'none', resize: 'none', marginBottom: 10 }}
           />
         ) : (
           <div
             onClick={() => { setCaseVal(c.case || ''); setEditingCase(true); }}
-            style={{ fontSize: 12, color: c.case ? '#8a9fb5' : '#3d5570', cursor: 'pointer', lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid transparent', marginBottom: 10, transition: 'border 0.2s' }}
+            style={{ fontSize: 13, color: c.case ? '#8a9fb5' : '#8295ad', cursor: 'pointer', lineHeight: 1.5, padding: '8px 10px', borderRadius: 8, border: '1px solid transparent', marginBottom: 10, transition: 'border 0.2s' }}
             onMouseEnter={e => (e.currentTarget.style.border = '1px solid rgba(100,160,220,0.15)')}
             onMouseLeave={e => (e.currentTarget.style.border = '1px solid transparent')}
             title="Clique para editar descrição do caso"
@@ -223,11 +225,24 @@ export function DetailPanel({
             <div key={ev.id} style={{ display: 'flex', gap: 12 }}>
               <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, border: `1px solid ${meta.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><meta.icon size={13} color={meta.color} /></div>
               <div style={{ flex: 1, padding: '10px 12px', borderRadius: 8, background: 'rgba(12,21,32,0.8)', border: '1px solid rgba(100,160,220,0.07)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, marginBottom: 5 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, marginBottom: 5 }}>
                   <span style={{ color: meta.color, fontWeight: 600 }}>{ev.type}</span>
-                  <span style={{ color: '#3d5570' }}>{ev.date}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#8295ad' }}>{ev.date}</span>
+                    {onDeleteEvent && (
+                      <button
+                        onClick={() => onDeleteEvent(ev.id)}
+                        title="Remover registro"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8295ad', display: 'flex', padding: 0 }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#fca5a5')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#8295ad')}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p style={{ fontSize: 12, color: '#8a9fb5', margin: 0 }}>{ev.content}</p>
+                <p style={{ fontSize: 13, color: '#8a9fb5', margin: 0 }}>{ev.content}</p>
                 {ev.attachment && (
                   <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(100,160,220,0.1)', background: 'rgba(0,0,0,0.2)' }}>
                     {ev.attachment.type.startsWith('image/') ? (
@@ -257,13 +272,13 @@ export function DetailPanel({
                               }
 
                             }} 
-                            style={{ fontSize: 9, color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                            style={{ fontSize: 10, color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
                           >
                             VISUALIZAR
                           </button>
                           <button 
                             onClick={() => openAttachment(ev.attachment!)} 
-                            style={{ fontSize: 9, color: '#3d5570', background: 'none', border: 'none', cursor: 'pointer' }}
+                            style={{ fontSize: 10, color: '#8295ad', background: 'none', border: 'none', cursor: 'pointer' }}
                           >
                             BAIXAR
                           </button>
@@ -277,11 +292,11 @@ export function DetailPanel({
           );
         })}
       </div>
-      <div style={{ padding: '12px 16px 16px', borderTop: '1px solid rgba(100,160,220,0.06)', background: '#06101a' }}>
-        <textarea placeholder="Registrar evolução..." style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(10,21,32,0.8)', border: '1px solid rgba(100,160,220,0.08)', color: '#e8edf2', fontSize: 12, height: 68, outline: 'none', resize: 'none' }} value={newEvent} onChange={e => onEventChange(e.target.value)} />
-        {pendingAttachment && <div style={{ fontSize: 10, color: '#10b981', marginTop: 5 }}>📎 {pendingAttachment.name} <button onClick={onClearAttachment} style={{ color: '#3d5570', background: 'none', border: 'none', cursor: 'pointer' }}>[X]</button></div>}
+      <div style={{ padding: '12px 16px 16px', borderTop: '1px solid rgba(100,160,220,0.06)', background: '#0e1827' }}>
+        <textarea placeholder="Registrar evolução..." style={{ width: '100%', padding: '10px 12px', borderRadius: 8, background: 'rgba(10,21,32,0.8)', border: '1px solid rgba(100,160,220,0.08)', color: '#eef2f7', fontSize: 13, height: 68, outline: 'none', resize: 'none' }} value={newEvent} onChange={e => onEventChange(e.target.value)} />
+        {pendingAttachment && <div style={{ fontSize: 10, color: '#10b981', marginTop: 5 }}>📎 {pendingAttachment.name} <button onClick={onClearAttachment} style={{ color: '#8295ad', background: 'none', border: 'none', cursor: 'pointer' }}>[X]</button></div>}
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-           <button onClick={() => fileInputRef.current?.click()} style={{ padding: '0 14px', height: 36, borderRadius: 8, border: '1px solid rgba(100,160,220,0.1)', background: 'rgba(100,160,220,0.04)', color: '#3d5570', cursor: 'pointer' }}><Paperclip size={14}/></button>
+           <button onClick={() => fileInputRef.current?.click()} style={{ padding: '0 14px', height: 36, borderRadius: 8, border: '1px solid rgba(100,160,220,0.1)', background: 'rgba(100,160,220,0.04)', color: '#8295ad', cursor: 'pointer' }}><Paperclip size={14}/></button>
            <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && onAttachFile(e.target.files[0])} />
            <button 
              onClick={onAddEvent} 
@@ -290,9 +305,9 @@ export function DetailPanel({
                flex: 1, 
                height: 36, 
                borderRadius: 8, 
-               background: 'rgba(200,169,110,0.1)', 
-               color: '#c8a96e', 
-               border: '1px solid rgba(200,169,110,0.25)', 
+               background: 'rgba(201,162,39,0.1)', 
+               color: '#ddc063', 
+               border: '1px solid rgba(201,162,39,0.25)', 
                fontWeight: 600, 
                fontSize: 10,
                cursor: (!newEvent.trim() && !pendingAttachment) ? 'not-allowed' : 'pointer',

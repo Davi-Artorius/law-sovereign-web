@@ -9,7 +9,12 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 4000;
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+// OCR via Gemini — usa o endpoint compatível com OpenAI, então reaproveita o mesmo SDK.
+// Modelo configurável por env (OCR_MODEL) caso o nome mude. Chave: GEMINI_API_KEY.
+const OCR_MODEL = process.env.OCR_MODEL || 'gemini-2.5-flash';
+const ocrClient = process.env.GEMINI_API_KEY
+  ? new OpenAI({ apiKey: process.env.GEMINI_API_KEY, baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' })
+  : null;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Maelstrom: Aumentando para 50mb para suportar anexos reais
@@ -28,13 +33,26 @@ app.use((req, res, next) => {
 app.get('/clients', async (req, res) => {
   try {
     const clients = await prisma.client.findMany({
-      include: { events: true },
+      // Performance: lista vem LEVE — eventos sem o anexo base64 (carregado sob demanda ao abrir o dossiê)
+      include: { events: { select: { id: true, clientId: true, type: true, content: true, date: true } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json(clients);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Erro ao buscar clientes' });
+  }
+});
+
+// Eventos COMPLETOS de um cliente (com anexos) — carregados sob demanda ao abrir o dossiê
+app.get('/clients/:id/events', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const events = await prisma.timelineEvent.findMany({ where: { clientId: id } });
+    res.json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao buscar eventos do cliente' });
   }
 });
 
@@ -90,6 +108,17 @@ app.post('/events', async (req, res) => {
   }
 });
 
+app.delete('/events/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.timelineEvent.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao deletar evento' });
+  }
+});
+
 // ─── CAPTURA DE LEAD PELO SITE ──────────────────────────────────────────────
 app.post('/capture', async (req, res) => {
   const { name, phone, area, case: caseDesc } = req.body;
@@ -140,12 +169,12 @@ app.get('/portal/:id', async (req, res) => {
 
 // ─── GRAMPEADOR INTELIGENTE (OCR) ────────────────────────────────────────────
 app.post('/ocr', async (req, res) => {
-  if (!openai) return res.status(503).json({ error: 'OCR não configurado — adicione OPENAI_API_KEY no Railway' }) as any;
+  if (!ocrClient) return res.status(503).json({ error: 'OCR não configurado — adicione GEMINI_API_KEY no Railway' }) as any;
   const { image, mimeType } = req.body;
   if (!image) return res.status(400).json({ error: 'Imagem não fornecida' }) as any;
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+    const response = await ocrClient.chat.completions.create({
+      model: OCR_MODEL,
       messages: [{
         role: 'user',
         content: [
