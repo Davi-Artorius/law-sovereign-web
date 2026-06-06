@@ -550,7 +550,6 @@ function AppInner() {
                 ref={ocrInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 style={{ display: 'none' }}
                 onChange={e => { if (e.target.files?.[0]) handleOCR(e.target.files[0]); e.target.value = ''; }}
               />
