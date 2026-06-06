@@ -224,7 +224,7 @@ export function DetailPanel({
           return (
             <div key={ev.id} style={{ display: 'flex', gap: 12 }}>
               <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, border: `1px solid ${meta.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><meta.icon size={13} color={meta.color} /></div>
-              <div style={{ flex: 1, padding: '10px 12px', borderRadius: 8, background: 'rgba(12,21,32,0.8)', border: '1px solid rgba(100,160,220,0.07)' }}>
+              <div style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 8, background: 'rgba(12,21,32,0.8)', border: '1px solid rgba(100,160,220,0.07)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, marginBottom: 5 }}>
                   <span style={{ color: meta.color, fontWeight: 600 }}>{ev.type}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -242,7 +242,7 @@ export function DetailPanel({
                     )}
                   </div>
                 </div>
-                <p style={{ fontSize: 13, color: '#8a9fb5', margin: 0 }}>{ev.content}</p>
+                <p style={{ fontSize: 13, color: '#8a9fb5', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{ev.content}</p>
                 {ev.attachment && (
                   <div style={{ marginTop: 10, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(100,160,220,0.1)', background: 'rgba(0,0,0,0.2)' }}>
                     {ev.attachment.type.startsWith('image/') ? (
@@ -256,11 +256,11 @@ export function DetailPanel({
                         }}
                       />
                     ) : (
-                      <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#8a9fb5', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Paperclip size={12} /> {ev.attachment.name}
+                      <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 10, color: '#8a9fb5', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }} title={ev.attachment.name}>
+                          <Paperclip size={12} style={{ flexShrink: 0 }} /> <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.attachment.name}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                           <button 
                             onClick={() => {
                               const blob = b64toBlob(ev.attachment!.data, ev.attachment!.type);
