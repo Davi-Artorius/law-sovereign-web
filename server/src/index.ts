@@ -24,9 +24,10 @@ const allowedOrigins = [
   'http://localhost:9090',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  // Vercel (prod)
+  // Vercel (prod) — alias + deployment URLs
   'https://law-sovereign.vercel.app',
   'https://law-sovereign-web.vercel.app',
+  'https://law-sovereign-f8am19xn7-davi-artorius-projects.vercel.app',
   // Custom env var (e.g., ALLOWED_ORIGIN=https://custom-domain.com)
   process.env.ALLOWED_ORIGIN
 ].filter(Boolean) as string[];
