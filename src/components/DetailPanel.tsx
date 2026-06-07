@@ -137,16 +137,19 @@ export function DetailPanel({
               style={{
                 flex: 1,
                 minWidth: 120,
-                padding: '6px 8px',
-                borderRadius: 6,
-                border: '1px solid rgba(201,162,39,0.3)',
-                background: 'rgba(201,162,39,0.08)',
-                color: '#ddc063',
-                fontSize: 10,
-                fontWeight: 600,
+                padding: '8px 12px',
+                borderRadius: 12,
+                border: '1.5px solid rgba(201,162,39,0.5)',
+                background: 'rgba(201,162,39,0.12)',
+                color: '#c9a227',
+                fontSize: 11,
+                fontWeight: 700,
                 outline: 'none',
                 cursor: 'pointer',
-                textTransform: 'uppercase'
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3), 0 0 12px rgba(201,162,39,0.1)',
+                transition: 'all 0.2s ease'
               }}
             >
               <option value="TRIAGEM">Triagem</option>
