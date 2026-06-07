@@ -227,7 +227,7 @@ app.post('/capture', async (req, res) => {
         isPaperLead: false
       }
     });
-    res.json({ success: true, id: client.id });
+    res.json(client);
   } catch (error) {
     console.error('[CAPTURE ERROR]', error instanceof Error ? error.message : String(error));
     res.status(500).json({ error: 'Erro ao registrar lead', details: error instanceof Error ? error.message : String(error) });
