@@ -21,7 +21,7 @@ const ocrClient = process.env.GEMINI_API_KEY
 // Em produção, defina ALLOWED_ORIGIN no Railway com a URL exata do Vercel.
 // Ex: ALLOWED_ORIGIN=https://law-sovereign.vercel.app
 // Em dev local, libera localhost para não travar o desenvolvimento.
-const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
+const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:9090';
 app.use(cors({
   origin: (origin, callback) => {
     // Permite chamadas sem origin (ex: Postman, Railway health checks, curl)
