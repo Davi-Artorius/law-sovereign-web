@@ -7,20 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ClientStatus {
-  TRIAGEM
-  PROPOSTA
-  CONTRATO
-  ATIVO
-  DESFECHO
-  ENCAMINHADO
-  INATIVO
-}
-
 model Client {
   id              String        @id @default(uuid())
   name            String
-  status          ClientStatus  @default(TRIAGEM)
+  status          String        @default("TRIAGEM")
   lastAction      String
   case            String
   area            String
