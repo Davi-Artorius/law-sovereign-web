@@ -130,7 +130,33 @@ export function DetailPanel({
         
         {/* --- LAW SOVEREIGN v3.5: CONTROLES ESTRATÉGICOS --- */}
         {onUpdateClient && (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
+              value={c.status}
+              onChange={e => onUpdateClient(c.id, { status: e.target.value as any })}
+              style={{
+                flex: 1,
+                minWidth: 120,
+                padding: '6px 8px',
+                borderRadius: 6,
+                border: '1px solid rgba(201,162,39,0.3)',
+                background: 'rgba(201,162,39,0.08)',
+                color: '#ddc063',
+                fontSize: 10,
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer',
+                textTransform: 'uppercase'
+              }}
+            >
+              <option value="TRIAGEM">Triagem</option>
+              <option value="PROPOSTA">Proposta</option>
+              <option value="CONTRATO">Contrato</option>
+              <option value="ATIVO">Ativo</option>
+              <option value="DESFECHO">Desfecho</option>
+              <option value="ENCAMINHADO">Encaminhado</option>
+              <option value="INATIVO">Inativo</option>
+            </select>
             <button 
               onClick={() => onUpdateClient(c.id, { isPaperLead: !c.isPaperLead })}
               style={{ flex: 1, padding: '6px 8px', borderRadius: 6, border: c.isPaperLead ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(100,160,220,0.2)', background: c.isPaperLead ? 'rgba(168,85,247,0.12)' : 'rgba(100,160,220,0.04)', color: c.isPaperLead ? '#c084fc' : '#8a9fb5', fontSize: 10, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
