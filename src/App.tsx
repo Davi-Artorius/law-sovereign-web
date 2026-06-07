@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import {
   Search, PlusCircle, Layers, LayoutGrid, Stethoscope,
-  X, ShieldCheck, BarChart2, Menu, Camera
+  X, ShieldCheck, BarChart2, Menu, Camera, FileText, Check, CheckCircle, Share2, AlertTriangle
 } from 'lucide-react';
 
 // Tipos e Constantes
@@ -18,6 +18,7 @@ import { DetailPanel } from './components/DetailPanel';
 import { LoginScreen } from './components/LoginScreen';
 import { CapturePage } from './pages/CapturePage';
 import { PortalPage } from './pages/PortalPage';
+import { LandingPage } from './pages/LandingPage';
 
 // ─── HOOKS CUSTOMIZADOS ──────────────────────────────────────────────────────
 function useToast() {
@@ -61,7 +62,7 @@ function AppInner() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // UI State
-  const [view, setView] = useState<'Dashboard' | 'Triagem' | 'Evolução' | 'Encaminhamentos'>('Dashboard');
+  const [view, setView] = useState<'Dashboard' | 'Triagem' | 'Proposta' | 'Contrato' | 'Ativo' | 'Desfecho' | 'Encaminhados' | 'Inativos'>('Dashboard');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [search, setSearch] = useState('');
   const [isAddingClient, setIsAddingClient] = useState(false);
@@ -119,7 +120,7 @@ function AppInner() {
     try {
       const newClient = await storage.createClient({
         name: newClientName.trim(),
-        status: 'Triagem',
+        status: 'TRIAGEM',
         lastAction: formatBRDate(new Date()),
         case: newClientCase.trim() || 'Descrição pendente',
         area: newClientArea
@@ -138,9 +139,9 @@ function AppInner() {
 
   const promoteClient = useCallback(async (clientId: string) => {
     try {
-      const updated = await storage.updateClient(clientId, { 
-        status: 'Evolução', 
-        lastAction: formatBRDate(new Date()) 
+      const updated = await storage.updateClient(clientId, {
+        status: 'PROPOSTA',
+        lastAction: formatBRDate(new Date())
       });
       
       setClients(prev => prev.map(c => c.id === clientId ? updated : c));
@@ -149,7 +150,7 @@ function AppInner() {
         clientId,
         type: 'Nota',
         date: formatBRDateTime(new Date()),
-        content: 'Promovido ao Hub de Evolução via API.'
+        content: 'Status atualizado para PROPOSTA via API.'
       });
       
       setEvents(prev => [event, ...prev]);
@@ -269,16 +270,25 @@ function AppInner() {
                           c.case.toLowerCase().includes(search.toLowerCase());
       if (!matchSearch) return false;
 
-      if (view === 'Triagem') return c.status === 'Triagem';
-      if (view === 'Evolução') return c.status === 'Evolução';
-      if (view === 'Encaminhamentos') return c.isEncaminhado;
+      if (view === 'Triagem') return c.status === 'TRIAGEM';
+      if (view === 'Proposta') return c.status === 'PROPOSTA';
+      if (view === 'Contrato') return c.status === 'CONTRATO';
+      if (view === 'Ativo') return c.status === 'ATIVO';
+      if (view === 'Desfecho') return c.status === 'DESFECHO';
+      if (view === 'Encaminhados') return c.status === 'ENCAMINHADO';
+      if (view === 'Inativos') return c.status === 'INATIVO';
       return true;
     });
   }, [clients, search, view]);
 
   const counts = useMemo(() => ({
-    triagem: clients.filter(c => c.status === 'Triagem').length,
-    evolucao: clients.filter(c => c.status === 'Evolução').length,
+    triagem: clients.filter(c => c.status === 'TRIAGEM').length,
+    proposta: clients.filter(c => c.status === 'PROPOSTA').length,
+    contrato: clients.filter(c => c.status === 'CONTRATO').length,
+    ativo: clients.filter(c => c.status === 'ATIVO').length,
+    desfecho: clients.filter(c => c.status === 'DESFECHO').length,
+    encaminhados: clients.filter(c => c.status === 'ENCAMINHADO').length,
+    inativos: clients.filter(c => c.status === 'INATIVO').length,
     enc: clients.filter(c => c.isEncaminhado).length,
   }), [clients]);
 
@@ -301,7 +311,7 @@ function AppInner() {
 
   const forgotten = useMemo(() => {
     return clients.filter(c => {
-      if (c.status !== 'Evolução') return false;
+      if (c.status !== 'PROPOSTA') return false;
       const cEvents = events.filter(e => e.clientId === c.id);
       if (cEvents.length === 0) return daysSince(c.createdAt) > 15;
       
@@ -323,8 +333,13 @@ function AppInner() {
 
   const NAV_ITEMS = [
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart2, sub: 'Inteligência' },
-    { id: 'Triagem', label: 'Triagem', icon: Layers, count: counts.triagem, sub: 'Entrada' },
-    { id: 'Evolução', label: 'Evolução', icon: LayoutGrid, count: counts.evolucao, sub: 'Ativos' },
+    { id: 'Triagem', label: 'Triagem', icon: Layers, count: counts.triagem, sub: 'Novos' },
+    { id: 'Proposta', label: 'Proposta', icon: FileText, count: counts.proposta, sub: 'Orçamento' },
+    { id: 'Contrato', label: 'Contrato', icon: Check, count: counts.contrato, sub: 'Assinado' },
+    { id: 'Ativo', label: 'Ativo', icon: LayoutGrid, count: counts.ativo, sub: 'Em andamento' },
+    { id: 'Desfecho', label: 'Desfecho', icon: CheckCircle, count: counts.desfecho, sub: 'Encerrado' },
+    { id: 'Encaminhados', label: 'Encaminhados', icon: Share2, count: counts.encaminhados, sub: 'para o especialista' },
+    { id: 'Inativos', label: 'Inativos', icon: AlertTriangle, count: counts.inativos, sub: 'Dormindo' },
     { id: 'Encaminhamentos', label: 'Encaminhamentos', icon: Stethoscope, count: counts.enc, sub: 'Externos' },
   ];
 
@@ -602,6 +617,7 @@ function AuthGate() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/lp" element={<LandingPage />} />
       <Route path="/capture" element={<CapturePage />} />
       <Route path="/portal/:id" element={<PortalPage />} />
       <Route path="/*" element={<AuthGate />} />

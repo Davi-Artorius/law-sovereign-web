@@ -212,7 +212,7 @@ export function DetailPanel({
           </div>
         )}
 
-        {c.status === 'Evolução' && (
+        {c.status === 'PROPOSTA' && (
           <button onClick={() => onToggleEnc(c.id)} style={{ width: '100%', padding: '9px 16px', borderRadius: 8, border: c.isEncaminhado ? '1px solid rgba(168,85,247,0.4)' : '1px solid rgba(168,85,247,0.2)', background: c.isEncaminhado ? 'rgba(168,85,247,0.12)' : 'rgba(168,85,247,0.05)', color: '#c084fc', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <Stethoscope size={14}/> {c.isEncaminhado ? 'Encerrar Intervenção' : 'Solicitar Especialista'}
           </button>

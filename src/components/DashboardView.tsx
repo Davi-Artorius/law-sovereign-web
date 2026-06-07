@@ -34,7 +34,7 @@ function BarChart({ data }: BarChartProps) {
 interface DashboardViewProps {
   clients: Client[];
   events: TimelineEvent[];
-  counts: { triagem: number; evolucao: number; enc: number };
+  counts: { triagem: number; proposta: number; contrato: number; ativo: number; desfecho: number; encaminhados: number; inativos: number; enc: number };
   weekData: { day: string; count: number }[];
   forgotten: Client[];
   onReset?: () => void;
@@ -59,7 +59,7 @@ export function DashboardView({ clients, counts, weekData, forgotten, onReset }:
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
         {[
           { label: 'Fluxo de Triagem', value: counts.triagem, icon: Layers, color: '#60a5fa', sub: 'Aguardando Aprovação' },
-          { label: 'Acompanhamento Ativo', value: counts.evolucao, icon: LayoutGrid, color: '#10b981', sub: 'Hub de Evolução' },
+          { label: 'Propostas Ativas', value: counts.proposta, icon: LayoutGrid, color: '#10b981', sub: 'Aguardando Resposta' },
           { label: 'Intervenções Externas', value: counts.enc, icon: Stethoscope, color: '#c084fc', sub: 'Encaminhamentos' },
         ].map(k => (
           <div key={k.label} style={{ background: '#0e1827', border: '1px solid rgba(120,160,210,0.10)', padding: 24, borderRadius: 20 }}>

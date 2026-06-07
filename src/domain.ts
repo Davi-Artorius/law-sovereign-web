@@ -1,5 +1,13 @@
-export type ClientStatus = 'Triagem' | 'Evolução';
-export type EventType = 'Consulta' | 'Nota' | 'Alerta' | 'Encaminhamento';
+export type ClientStatus =
+  | 'TRIAGEM'        // Lead novo, avaliando
+  | 'PROPOSTA'       // Orçamento enviado, aguardando resposta
+  | 'CONTRATO'       // Contrato assinado, pronto pra começar
+  | 'ATIVO'          // Caso em andamento
+  | 'DESFECHO'       // Ganhou, perdeu ou transou
+  | 'ENCAMINHADO'    // Enviado pro colega
+  | 'INATIVO';       // Não converteu, dormiu
+
+export type EventType = 'Consulta' | 'Nota' | 'Alerta' | 'Encaminhamento' | 'Proposta' | 'Contrato';
 
 export interface Attachment {
   name: string;
