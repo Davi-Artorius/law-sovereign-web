@@ -59,7 +59,7 @@ export function ClientCard({ client: c, selected, onSelect, onPromote, onDelete 
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', background: c.status === 'Triagem' ? 'rgba(234,179,8,0.10)' : 'rgba(16,185,129,0.10)', border: c.status === 'Triagem' ? '1px solid rgba(234,179,8,0.28)' : '1px solid rgba(16,185,129,0.28)', color: c.status === 'Triagem' ? '#eab308' : '#10b981' }}>{c.status}</span>
+          <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 500, letterSpacing: '0.04em', background: c.status === 'TRIAGEM' ? 'rgba(234,179,8,0.10)' : 'rgba(16,185,129,0.10)', border: c.status === 'TRIAGEM' ? '1px solid rgba(234,179,8,0.28)' : '1px solid rgba(16,185,129,0.28)', color: c.status === 'TRIAGEM' ? '#eab308' : '#10b981' }}>{c.status}</span>
           {c.isEncaminhado && <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 11, fontWeight: 500, background: 'rgba(168,85,247,0.10)', border: '1px solid rgba(168,85,247,0.28)', color: '#c084fc' }}>↗ Encaminhado</span>}
         </div>
       </div>
@@ -77,7 +77,7 @@ export function ClientCard({ client: c, selected, onSelect, onPromote, onDelete 
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(120,160,210,0.08)', paddingTop: 11 }}>
         <div style={{ fontSize: 12, color: '#8295ad', display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={12}/> {c.lastAction}</div>
-        {c.status === 'Triagem'
+        {c.status === 'TRIAGEM'
           ? <button onClick={e => { e.stopPropagation(); onPromote(c.id); }} style={{ padding: '5px 15px', borderRadius: 99, border: '1px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.10)', color: '#10b981', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit' }}>Promover →</button>
           : <ChevronRight size={18} color={hov ? '#c9a227' : '#6b8099'} style={{ transition: 'color 0.2s' }} />
         }

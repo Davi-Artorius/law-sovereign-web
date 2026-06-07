@@ -7,23 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ClientStatus {
+  TRIAGEM
+  PROPOSTA
+  CONTRATO
+  ATIVO
+  DESFECHO
+  ENCAMINHADO
+  INATIVO
+}
+
 model Client {
-  id              String          @id @default(uuid())
+  id              String        @id @default(uuid())
   name            String
-  status          String
-  isEncaminhado   Boolean         @default(false)
+  status          ClientStatus  @default(TRIAGEM)
+  statusChangedAt DateTime      @default(now())  // Rastreia quando mudou de status (Foice de Prejuízo)
   lastAction      String
   case            String
   area            String
-  
+
   // --- LAW SOVEREIGN v3.5: ARMAS DE ESCALA ---
-  chanceOfSuccess Int?            
-  costOfWaiting   Float?          
-  missingProofs   String?         
+  chanceOfSuccess Int?
+  costOfWaiting   Float?
+  missingProofs   String?
   isPaperLead     Boolean         @default(false)
   phone           String?
 
   createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   events          TimelineEvent[]
 }
 

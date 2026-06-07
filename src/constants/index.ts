@@ -13,6 +13,8 @@ export const AREA_STYLE: Record<string, { bg: string; text: string; border: stri
 
 export const EVENT_META: Record<EventType, { icon: any; color: string; border: string; bg: string }> = {
   Consulta:       { icon: Scale,         color: '#60a5fa', border: 'rgba(59,130,246,0.3)',   bg: 'rgba(59,130,246,0.08)'  },
+  Proposta:       { icon: Scale,         color: '#10b981', border: 'rgba(16,185,129,0.3)',   bg: 'rgba(16,185,129,0.08)'  },
+  Contrato:       { icon: Scale,         color: '#c8a96e', border: 'rgba(200,169,110,0.3)',  bg: 'rgba(200,169,110,0.08)' },
   Nota:           { icon: StickyNote,    color: '#c8a96e', border: 'rgba(200,169,110,0.3)',  bg: 'rgba(200,169,110,0.08)' },
   Alerta:         { icon: AlertTriangle, color: '#fbbf24', border: 'rgba(251,191,36,0.3)',   bg: 'rgba(251,191,36,0.08)'  },
   Encaminhamento: { icon: ArrowUpRight,  color: '#c084fc', border: 'rgba(168,85,247,0.3)',   bg: 'rgba(168,85,247,0.08)'  },

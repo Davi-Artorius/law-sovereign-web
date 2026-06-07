@@ -6,7 +6,7 @@ export const INITIAL_CLIENTS: Client[] = [
   { 
     id: 'c1', 
     name: 'Ricardo Fonseca', 
-    status: 'Triagem', 
+    status: 'TRIAGEM', 
     isEncaminhado: false, 
     lastAction: '12 Mai 2026', 
     case: 'Inventário e Partilha de Bens', 
@@ -16,7 +16,7 @@ export const INITIAL_CLIENTS: Client[] = [
   { 
     id: 'c2', 
     name: 'Maria Helena Oliveira', 
-    status: 'Evolução', 
+    status: 'PROPOSTA', 
     isEncaminhado: true, 
     lastAction: '27 Mai 2026', 
     case: 'Rescisão Indevida e Horas Extras', 
@@ -26,7 +26,7 @@ export const INITIAL_CLIENTS: Client[] = [
   { 
     id: 'c3', 
     name: 'João Pedro Santos', 
-    status: 'Evolução', 
+    status: 'PROPOSTA', 
     isEncaminhado: false, 
     lastAction: '29 Mai 2026', 
     case: 'Fusão & Aquisição — Contrato Societário', 
@@ -36,7 +36,7 @@ export const INITIAL_CLIENTS: Client[] = [
   { 
     id: 'c4', 
     name: 'Carla Mendes', 
-    status: 'Evolução', 
+    status: 'PROPOSTA', 
     isEncaminhado: false, 
     lastAction: '01 Abr 2026', 
     case: 'Guarda Compartilhada — Menor', 
