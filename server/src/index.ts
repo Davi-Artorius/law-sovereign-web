@@ -9,6 +9,7 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 4000;
+
 // OCR via Gemini — usa o endpoint compatível com OpenAI, então reaproveita o mesmo SDK.
 // Modelo configurável por env (OCR_MODEL) caso o nome mude. Chave: GEMINI_API_KEY.
 const OCR_MODEL = process.env.OCR_MODEL || 'gemini-2.5-flash';
@@ -16,9 +17,51 @@ const ocrClient = process.env.GEMINI_API_KEY
   ? new OpenAI({ apiKey: process.env.GEMINI_API_KEY, baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' })
   : null;
 
-app.use(cors());
+// ─── CORS: APENAS A ORIGEM AUTORIZADA ────────────────────────────────────────
+// Em produção, defina ALLOWED_ORIGIN no Railway com a URL exata do Vercel.
+// Ex: ALLOWED_ORIGIN=https://law-sovereign.vercel.app
+// Em dev local, libera localhost para não travar o desenvolvimento.
+const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:5173';
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permite chamadas sem origin (ex: Postman, Railway health checks, curl)
+    if (!origin) return callback(null, true);
+    if (origin === allowedOrigin) return callback(null, true);
+    callback(new Error(`Origem bloqueada pelo CORS: ${origin}`));
+  }
+}));
+
 app.use(express.json({ limit: '50mb' })); // Maelstrom: Aumentando para 50mb para suportar anexos reais
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// ─── API KEY: GUARDA DA PORTA ─────────────────────────────────────────────────
+// Todas as rotas internas exigem o header 'x-api-key' com o valor de INTERNAL_API_KEY.
+// Rotas públicas (portal do cliente e captura de lead) ficam abertas — sem autenticação.
+// Para gerar uma chave segura: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+const PUBLIC_PATHS = ['/capture', '/health'];
+
+app.use((req, res, next) => {
+  // Rotas públicas: /capture (form de lead) e /portal/:id (consulta do cliente)
+  const isPublic = PUBLIC_PATHS.some(p => req.path === p) || req.path.startsWith('/portal/');
+  if (isPublic) return next();
+
+  // Sem API Key configurada no Railway: bloqueia em produção, avisa em dev
+  if (!INTERNAL_API_KEY) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(500).json({ error: 'INTERNAL_API_KEY não configurada no servidor.' }) as any;
+    }
+    // Dev sem chave configurada: passa com aviso no log
+    console.warn('[AVISO] INTERNAL_API_KEY não definida — modo dev sem autenticação.');
+    return next();
+  }
+
+  const provided = req.headers['x-api-key'];
+  if (provided !== INTERNAL_API_KEY) {
+    return res.status(401).json({ error: 'Não autorizado.' }) as any;
+  }
+  next();
+});
 
 // ─── DEBUG MIDDLEWARE ───────────────────────────────────────────────────────
 app.use((req, res, next) => {
