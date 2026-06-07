@@ -24,10 +24,19 @@ export function CapturePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, area, case: caseDesc })
       });
-      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorMsg = data?.error || 'Erro desconhecido';
+        throw new Error(errorMsg);
+      }
+
       setSuccess(true);
-    } catch {
-      setError('Erro ao enviar. Tente novamente.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao enviar. Tente novamente.';
+      setError(message);
+      console.error('[CapturePage Error]', message);
     } finally {
       setLoading(false);
     }
