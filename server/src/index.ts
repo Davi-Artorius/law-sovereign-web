@@ -48,7 +48,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Rotas públicas (portal do cliente e captura de lead) ficam abertas — sem autenticação.
 // Para gerar uma chave segura: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
-const PUBLIC_PATHS = ['/capture', '/health'];
+const PUBLIC_PATHS = ['/capture', '/health', '/debug'];
 
 app.use((req, res, next) => {
   // Rotas públicas: /capture (form de lead) e /portal/:id (consulta do cliente)
