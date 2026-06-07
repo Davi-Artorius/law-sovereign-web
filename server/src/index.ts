@@ -36,7 +36,12 @@ app.use(cors({
   origin: (origin, callback) => {
     // Permite chamadas sem origin (ex: Postman, Railway health checks, curl)
     if (!origin) return callback(null, true);
+    // Verifica whitelist específica
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Permite qualquer *.vercel.app (deployment dinâmico do Vercel)
+    if (origin?.includes('.vercel.app')) return callback(null, true);
+    // Permite localhost em qualquer porta (dev)
+    if (origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1')) return callback(null, true);
     callback(new Error(`Origem bloqueada pelo CORS: ${origin}`));
   }
 }));
