@@ -77,6 +77,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', db: String(error) });
+  }
+});
+
 app.get('/clients', async (req, res) => {
   try {
     const clients = await prisma.client.findMany({
@@ -86,8 +95,8 @@ app.get('/clients', async (req, res) => {
     });
     res.json(clients);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao buscar clientes' });
+    console.error('ERROR fetching clients:', error);
+    res.status(500).json({ error: 'Erro ao buscar clientes', details: String(error) });
   }
 });
 
