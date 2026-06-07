@@ -18,17 +18,18 @@ const ocrClient = process.env.GEMINI_API_KEY
   : null;
 
 // ─── CORS: APENAS A ORIGEM AUTORIZADA ────────────────────────────────────────
-// Em produção, defina ALLOWED_ORIGIN no Railway com a URL exata do Vercel.
-// Ex: ALLOWED_ORIGIN=https://law-sovereign.vercel.app
-// Em dev local, libera localhost para não travar o desenvolvimento.
-const isDev = process.env.NODE_ENV !== 'production';
-const allowedOrigins = isDev
-  ? ['http://localhost:9090', 'http://localhost:5173', 'http://127.0.0.1:5173']
-  : [
-      'https://law-sovereign.vercel.app',
-      'https://law-sovereign-web.vercel.app',
-      process.env.ALLOWED_ORIGIN || 'https://law-sovereign.vercel.app'
-    ].filter(Boolean);
+// Whitelist: localhost (dev) + Vercel (prod) + custom env var
+const allowedOrigins = [
+  // Dev local
+  'http://localhost:9090',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  // Vercel (prod)
+  'https://law-sovereign.vercel.app',
+  'https://law-sovereign-web.vercel.app',
+  // Custom env var (e.g., ALLOWED_ORIGIN=https://custom-domain.com)
+  process.env.ALLOWED_ORIGIN
+].filter(Boolean) as string[];
 
 app.use(cors({
   origin: (origin, callback) => {
