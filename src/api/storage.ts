@@ -3,6 +3,15 @@ import type { Client, TimelineEvent } from '../domain';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
+// ─── AUTENTICAÇÃO ─────────────────────────────────────────────────────────────
+// A chave interna é enviada automaticamente em toda requisição.
+// Configure VITE_INTERNAL_API_KEY no painel do Vercel com o mesmo valor
+// que INTERNAL_API_KEY no Railway.
+const INTERNAL_API_KEY = import.meta.env.VITE_INTERNAL_API_KEY as string | undefined;
+if (INTERNAL_API_KEY) {
+  axios.defaults.headers.common['x-api-key'] = INTERNAL_API_KEY;
+}
+
 export const storage = {
   // Maelstrom: Agora buscando dados REAIS da API
   getClients: async (): Promise<Client[]> => {
