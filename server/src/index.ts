@@ -99,6 +99,19 @@ app.get('/debug', async (req, res) => {
   }
 });
 
+// ⚠️ ADMIN: Nuclear reset — apaga TUDO (use com cuidado!)
+app.post('/admin/nuke', async (req, res) => {
+  const key = req.headers['x-nuke-key'];
+  if (key !== process.env.NUKE_KEY) return res.status(401).json({ error: 'Unauthorized' }) as any;
+  try {
+    const deleted = await prisma.client.deleteMany({});
+    await prisma.timelineEvent.deleteMany({});
+    res.json({ success: true, deleted: deleted.count, message: '☢️ All data nuked' });
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
