@@ -122,7 +122,6 @@ app.get('/health', async (req, res) => {
 app.get('/clients', async (req, res) => {
   try {
     const clients = await prisma.client.findMany({
-      where: { deletedAt: null },
       include: { events: { select: { id: true, clientId: true, type: true, content: true, date: true } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -159,15 +158,6 @@ app.post('/clients', async (req, res) => {
         phone: phone || null
       }
     });
-    // Audit: registrar criação
-    await prisma.timelineEvent.create({
-      data: {
-        clientId: client.id,
-        type: 'Criado',
-        date: new Date().toLocaleString('pt-BR'),
-        content: `Dossier criado em ${new Date().toLocaleString('pt-BR')} | Área: ${area}`
-      }
-    });
     res.json(client);
   } catch (error) {
     console.error('ERROR creating client:', error);
@@ -193,19 +183,7 @@ app.patch('/clients/:id', async (req, res) => {
 app.delete('/clients/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const client = await prisma.client.update({
-      where: { id },
-      data: { deletedAt: new Date() }
-    });
-    // Audit: registrar deletação
-    await prisma.timelineEvent.create({
-      data: {
-        clientId: id,
-        type: 'Deletado',
-        date: new Date().toLocaleString('pt-BR'),
-        content: `Dossier deletado em ${new Date().toLocaleString('pt-BR')}`
-      }
-    });
+    await prisma.client.delete({ where: { id } });
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -252,15 +230,6 @@ app.post('/capture', async (req, res) => {
         lastAction: today,
         phone: phone?.trim() || null,
         isPaperLead: false
-      }
-    });
-    // Audit: registrar captura
-    await prisma.timelineEvent.create({
-      data: {
-        clientId: client.id,
-        type: 'Captura',
-        date: new Date().toLocaleString('pt-BR'),
-        content: `Lead captado via formulário web | Área: ${area}`
       }
     });
     res.json(client);
