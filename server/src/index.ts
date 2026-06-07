@@ -175,7 +175,7 @@ app.post('/capture', async (req, res) => {
     const client = await prisma.client.create({
       data: {
         name: name.trim(),
-        status: 'Triagem',
+        status: 'TRIAGEM',
         case: caseDesc?.trim() || 'Captado via site do escritório',
         area,
         lastAction: today,
@@ -203,7 +203,6 @@ app.get('/portal/:id', async (req, res) => {
       name: client.name,
       area: client.area,
       status: client.status,
-      isEncaminhado: client.isEncaminhado,
       lastAction: client.lastAction,
       createdAt: client.createdAt,
       events: client.events.map(e => ({ date: e.date, type: e.type, content: e.content }))
