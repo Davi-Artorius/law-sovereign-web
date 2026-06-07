@@ -153,7 +153,7 @@ app.post('/clients', async (req, res) => {
         phone: phone || null
       }
     });
-    res.json({ success: true, id: client.id });
+    res.json(client);
   } catch (error) {
     console.error('ERROR creating client:', error);
     res.status(500).json({ error: 'Erro ao criar cliente', details: String(error) });
