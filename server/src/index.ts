@@ -24,7 +24,11 @@ const ocrClient = process.env.GEMINI_API_KEY
 const isDev = process.env.NODE_ENV !== 'production';
 const allowedOrigins = isDev
   ? ['http://localhost:9090', 'http://localhost:5173', 'http://127.0.0.1:5173']
-  : [process.env.ALLOWED_ORIGIN || 'https://law-sovereign.vercel.app'];
+  : [
+      'https://law-sovereign.vercel.app',
+      'https://law-sovereign-web.vercel.app',
+      process.env.ALLOWED_ORIGIN || 'https://law-sovereign.vercel.app'
+    ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -113,15 +117,23 @@ app.get('/clients/:id/events', async (req, res) => {
 });
 
 app.post('/clients', async (req, res) => {
-  const { name, status, case: caseDesc, area, lastAction } = req.body;
+  const { name, status, case: caseDesc, area, lastAction, phone } = req.body;
   try {
+    const today = new Date().toISOString().split('T')[0];
     const client = await prisma.client.create({
-      data: { name, status, case: caseDesc, area, lastAction }
+      data: {
+        name,
+        status: status || 'TRIAGEM',
+        case: caseDesc || 'Novo caso',
+        area,
+        lastAction: lastAction || today,
+        phone: phone || null
+      }
     });
-    res.json(client);
+    res.json({ success: true, id: client.id });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Erro ao criar cliente' });
+    console.error('ERROR creating client:', error);
+    res.status(500).json({ error: 'Erro ao criar cliente', details: String(error) });
   }
 });
 
