@@ -82,12 +82,34 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/debug', async (req, res) => {
+  try {
+    const tables = await prisma.$queryRaw`
+      SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
+    `;
+    res.json({ tables, db_connected: true });
+  } catch (error) {
+    res.json({ error: String(error), db_connected: false });
+  }
+});
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: 'ok', db: 'connected' });
+    res.json({
+      status: 'ok',
+      db: 'connected',
+      env: {
+        DATABASE_URL: process.env.DATABASE_URL ? '✓ defined' : '✗ missing',
+        NODE_ENV: process.env.NODE_ENV || 'undefined'
+      }
+    });
   } catch (error) {
-    res.status(500).json({ status: 'error', db: String(error) });
+    res.status(500).json({
+      status: 'error',
+      db: String(error),
+      DATABASE_URL: process.env.DATABASE_URL ? '✓ defined' : '✗ missing'
+    });
   }
 });
 
