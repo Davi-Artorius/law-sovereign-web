@@ -21,7 +21,6 @@ model Client {
   id              String        @id @default(uuid())
   name            String
   status          ClientStatus  @default(TRIAGEM)
-  statusChangedAt DateTime      @default(now())  // Rastreia quando mudou de status (Foice de Prejuízo)
   lastAction      String
   case            String
   area            String
