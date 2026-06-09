@@ -27,6 +27,12 @@ async function syncDatabaseSchema() {
     `;
     console.log('✓ Coluna deletedAt OK');
 
+    // Ensure Tenant has hasSeenOnboarding column
+    await prisma.$executeRaw`
+      ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "hasSeenOnboarding" BOOLEAN DEFAULT false;
+    `;
+    console.log('✓ Coluna hasSeenOnboarding OK');
+
     // Create indexes
     await prisma.$executeRaw`
       CREATE INDEX IF NOT EXISTS "Client_deletedAt_idx" ON "Client"("deletedAt");
