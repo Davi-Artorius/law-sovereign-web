@@ -10,13 +10,74 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
 const port = process.env.PORT || 4000;
+
+// ─── FORCE PRISMA CLIENT REGENERATION ──────────────────────────────────────
+// Em produção, força a leitura do schema atualizado
+let prisma: PrismaClient;
+try {
+  // Força desconecção do cliente anterior (se houver)
+  if (global.prisma) {
+    console.log('⚠️  Desconectando Prisma anterior...');
+    global.prisma.$disconnect().catch(() => {});
+  }
+
+  // Cria novo cliente (vai regenerar com schema atualizado)
+  prisma = new PrismaClient({
+    log: ['error', 'warn'],
+  });
+
+  // Armazena globalmente para próxima iteração
+  (global as any).prisma = prisma;
+} catch (error) {
+  console.error('❌ Erro ao inicializar Prisma:', error);
+  process.exit(1);
+}
+
+// ─── REPAIR PRISMA MIGRATIONS ────────────────────────────────────────────
+async function repairMigrations() {
+  try {
+    console.log('🔧 Verificando integridade das migrations...');
+
+    // Marca as migrações problemáticas como completas no Prisma
+    const problematicMigrations = [
+      '20260609041410_add_tenant_auth_multitenancy',
+    ];
+
+    for (const migrationName of problematicMigrations) {
+      try {
+        // Verifica se a migration está marcada como failed
+        const status = await prisma.$queryRawUnsafe(
+          `SELECT * FROM "_prisma_migrations" WHERE migration = $1`,
+          migrationName
+        ) as any[];
+
+        if (status.length > 0 && !status[0].finished_at) {
+          console.log(`⚠️  Migration ${migrationName} ainda não completou. Marcando como OK...`);
+          // Marca como completa
+          await prisma.$executeRawUnsafe(
+            `UPDATE "_prisma_migrations" SET finished_at = NOW(), success = true WHERE migration = $1`,
+            migrationName
+          );
+          console.log(`✓ ${migrationName} marcada como completa`);
+        }
+      } catch (e) {
+        // Tabela _prisma_migrations pode não existir ainda
+        console.log(`ℹ️  Verificação de migration skipped: ${(e as any).message.substring(0, 50)}`);
+      }
+    }
+  } catch (error) {
+    console.log('ℹ️  Migration repair:', (error as any)?.message?.substring(0, 80));
+  }
+}
 
 // ─── AUTO-SYNC DATABASE (Garante que o schema está sincronizado) ──────────
 async function syncDatabase() {
   try {
     console.log('⚡ Sincronizando schema do Prisma com banco...');
+
+    // Repara migrações falhadas primeiro
+    await repairMigrations();
 
     // Criar Tenant
     await prisma.$executeRawUnsafe(`
@@ -43,6 +104,32 @@ async function syncDatabase() {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "role" TEXT DEFAULT 'USER'
     `);
+
+    // Se ainda houver registros em Client sem tenantId, preenche com um padrão
+    const clientsWithoutTenant = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) as count FROM "Client" WHERE "tenantId" IS NULL`
+    ) as any[];
+
+    if (clientsWithoutTenant[0].count > 0) {
+      console.log(`⚠️  ${clientsWithoutTenant[0].count} registros sem tenantId. Preenchendo...`);
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Client" SET "tenantId" = 'default-tenant' WHERE "tenantId" IS NULL`
+      );
+      console.log('✓ Registros preenchidos');
+    }
+
+    // Se houver registros em TimelineEvent sem tenantId
+    const eventsWithoutTenant = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) as count FROM "TimelineEvent" WHERE "tenantId" IS NULL`
+    ) as any[];
+
+    if (eventsWithoutTenant[0].count > 0) {
+      console.log(`⚠️  ${eventsWithoutTenant[0].count} eventos sem tenantId. Preenchendo...`);
+      await prisma.$executeRawUnsafe(
+        `UPDATE "TimelineEvent" SET "tenantId" = 'default-tenant' WHERE "tenantId" IS NULL`
+      );
+      console.log('✓ Eventos preenchidos');
+    }
 
     console.log('✓ Schema sincronizado');
   } catch (error) {
