@@ -16,35 +16,33 @@ const prisma = new PrismaClient({
   log: ['error', 'warn'],
 });
 
-// ─── APPLY MIGRATIONS ON STARTUP ────────────────────────────────────────
-async function applyMigrations() {
+// ─── SYNC DATABASE SCHEMA ON STARTUP ────────────────────────────────────
+async function syncDatabaseSchema() {
   try {
-    console.log('🔄 Aplicando migrations pendentes...');
+    console.log('🔄 Sincronizando schema do banco de dados...');
 
-    // Force migration deploy
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
-      cwd: __dirname + '/..',
-      stdio: 'pipe',
-      encoding: 'utf-8'
-    });
+    // Ensure critical columns exist
+    await prisma.$executeRaw`
+      ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);
+    `;
+    console.log('✓ Coluna deletedAt OK');
 
-    if (result.error) {
-      console.warn('⚠️  Prisma migrate falhou (tentando continuar):', result.error.message);
-    } else if (result.status !== 0) {
-      console.warn('⚠️  Prisma migrate retornou status', result.status);
-      console.warn('stderr:', result.stderr);
-    } else {
-      console.log('✅ Migrations aplicadas com sucesso');
-    }
+    // Create indexes
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS "Client_deletedAt_idx" ON "Client"("deletedAt");
+    `;
+    console.log('✓ Índices OK');
+
+    console.log('✅ Schema sincronizado');
   } catch (e) {
-    console.warn('⚠️  Falha ao aplicar migrations:', (e as any).message);
+    console.warn('⚠️  Falha ao sincronizar schema:', (e as any).message);
+    // Continue anyway - columns might already exist
   }
 }
 
-// Run migrations on startup (non-blocking)
-applyMigrations().catch(() => {
-  // Ignore errors - Prisma will handle missing columns at query time
+// Run schema sync on startup (non-blocking)
+syncDatabaseSchema().catch(() => {
+  // Ignore errors
 });
 
 // ─── AUDIT LOGGING ────────────────────────────────────────────────────────
