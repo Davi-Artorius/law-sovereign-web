@@ -4,15 +4,16 @@ import type { Client, TimelineEvent } from '../domain';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 // ─── AUTENTICAÇÃO JWT ─────────────────────────────────────────────────────────
-// Ao fazer login, token é armazenado no localStorage e axios é configurado
+// Ao fazer login, token é armazenado no sessionStorage e axios é configurado
 // para enviar Authorization: Bearer <token> em toda requisição protegida.
+// sessionStorage limpa automaticamente ao fechar a aba (melhor segurança).
 
 export const setToken = (token: string) => {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 };
 
 export const logout = () => {
-  localStorage.removeItem('auth');
+  sessionStorage.removeItem('auth');
   delete axios.defaults.headers.common['Authorization'];
   window.location.reload();
 };

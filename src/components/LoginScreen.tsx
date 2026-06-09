@@ -32,8 +32,8 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const role = payload.role || 'USER';
 
-      // Salva token, email e role no localStorage
-      localStorage.setItem('auth', JSON.stringify({ token, email: responseEmail, role }));
+      // Salva token, email e role no sessionStorage (limpa ao fechar aba)
+      sessionStorage.setItem('auth', JSON.stringify({ token, email: responseEmail, role }));
 
       // Configura axios para usar token em requisições futuras
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

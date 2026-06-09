@@ -49,7 +49,7 @@ function AppInner() {
   const [loading, setLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const { userEmail, userRole } = (() => {
-    const auth = localStorage.getItem('auth');
+    const auth = sessionStorage.getItem('auth');
     if (auth) {
       try {
         const { email, role } = JSON.parse(auth);
@@ -280,7 +280,7 @@ function AppInner() {
 
   const handleLogout = useCallback(() => {
     if (!window.confirm('Tem certeza que deseja sair?')) return;
-    localStorage.removeItem('auth');
+    sessionStorage.removeItem('auth');
     window.location.reload();
   }, []);
 
@@ -640,7 +640,7 @@ function AppInner() {
 
 function AuthGate() {
   const [authenticated, setAuthenticated] = useState(() => {
-    const auth = localStorage.getItem('auth');
+    const auth = sessionStorage.getItem('auth');
     if (auth) {
       try {
         const { token } = JSON.parse(auth);
@@ -656,7 +656,7 @@ function AuthGate() {
 
   if (!authenticated) {
     return <LoginScreen onAuth={(_token: string, _email: string) => {
-      // Token já foi salvo no localStorage e axios em LoginScreen
+      // Token já foi salvo no sessionStorage e axios em LoginScreen
       setAuthenticated(true);
     }} />;
   }
