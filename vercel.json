@@ -3,5 +3,8 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/:path*", "destination": "/index.html" }
-  ]
+  ],
+  "env": {
+    "VITE_API_URL": "https://law-sovereign-web-production.up.railway.app"
+  }
 }
