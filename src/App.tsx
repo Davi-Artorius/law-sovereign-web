@@ -48,6 +48,18 @@ function AppInner() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState(() => {
+    const auth = localStorage.getItem('auth');
+    if (auth) {
+      try {
+        const { email } = JSON.parse(auth);
+        return email || 'Usuário';
+      } catch {
+        return 'Usuário';
+      }
+    }
+    return 'Usuário';
+  });
 
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
@@ -404,10 +416,10 @@ function AppInner() {
 
         <div className="p-4 border-t border-[#ffffff0a] space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-xs text-gold font-bold">AR</div>
+            <div className="w-9 h-9 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-xs text-gold font-bold">{userEmail.charAt(0).toUpperCase()}</div>
             <div>
-              <p className="text-sm font-semibold text-slate-100">Dr. Arquiteto</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wide">Sovereign Admin</p>
+              <p className="text-sm font-semibold text-slate-100 truncate">{userEmail}</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wide">Logged In</p>
             </div>
           </div>
           <button
