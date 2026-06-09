@@ -59,8 +59,16 @@ echo ""
 # Enviar registro para API
 echo -e "${BLUE}[PASSO 2]${NC} Registrando usuário na API..."
 
+INTERNAL_API_KEY="${INTERNAL_API_KEY:-}"
+if [ -z "$INTERNAL_API_KEY" ]; then
+    echo -e "${RED}❌ Erro: variável INTERNAL_API_KEY não definida${NC}"
+    echo "Defina com: export INTERNAL_API_KEY='sua-chave-api'"
+    exit 1
+fi
+
 RESPONSE=$(curl -s -X POST "$API_URL/auth/register" \
   -H "Content-Type: application/json" \
+  -H "x-api-key: $INTERNAL_API_KEY" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"name\":\"$NAME\"}")
 
 TOKEN=$(echo $RESPONSE | jq -r '.token // empty' 2>/dev/null)
@@ -106,10 +114,9 @@ DETALHES TÉCNICOS:
 ================================================================================
 INSTRUÇÕES:
   1. Acesse https://law-sovereign.vercel.app
-  2. Clique em "Registrar"
+  2. Clique em "Entrar Agora"
   3. Cole o email e senha acima
-  4. Faça login
-  5. Comece a criar seus dossiers
+  4. Você entrou — comece a criar seus dossiers
 
 SEGURANÇA:
   • Mude sua senha no primeiro acesso

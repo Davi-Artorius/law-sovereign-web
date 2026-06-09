@@ -7,10 +7,8 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onAuth }: LoginScreenProps) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,12 +21,7 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
     setLoading(true);
 
     try {
-      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
-      const payload = mode === 'login'
-        ? { email, password }
-        : { email, password, name };
-
-      const response = await axios.post(`${API_URL}${endpoint}`, payload);
+      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       const { token, email: responseEmail } = response.data;
 
       // Salva token e email no localStorage
@@ -67,55 +60,9 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
           <p className="text-[11px] text-slate-400 uppercase tracking-[0.2em] mt-2">Gestão de Elite</p>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex gap-2 mb-8 bg-slate-900/50 rounded-full p-1">
-          <button
-            onClick={() => {
-              setMode('login');
-              setError('');
-            }}
-            className={`flex-1 py-2.5 rounded-full text-sm font-bold uppercase tracking-widest transition-all ${
-              mode === 'login'
-                ? 'bg-gold/20 text-gold border border-gold/30'
-                : 'text-slate-400 hover:text-slate-300'
-            }`}
-          >
-            Entrar
-          </button>
-          <button
-            onClick={() => {
-              setMode('register');
-              setError('');
-            }}
-            className={`flex-1 py-2.5 rounded-full text-sm font-bold uppercase tracking-widest transition-all ${
-              mode === 'register'
-                ? 'bg-gold/20 text-gold border border-gold/30'
-                : 'text-slate-400 hover:text-slate-300'
-            }`}
-          >
-            Registrar
-          </button>
-        </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name (register only) */}
-          {mode === 'register' && (
-            <div>
-              <label className="text-[11px] text-slate-400 uppercase tracking-widest ml-1 block mb-1.5">
-                Nome Completo
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
-                className="w-full h-11 px-4 rounded-xl bg-slate-900/50 border border-[#ffffff12] text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-gold/40 transition-all"
-                disabled={loading}
-              />
-            </div>
-          )}
-
           {/* Email */}
           <div>
             <label className="text-[11px] text-slate-400 uppercase tracking-widest ml-1 block mb-1.5">
@@ -142,7 +89,7 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === 'register' ? 'Mínimo 8 caracteres' : '••••••••'}
+                placeholder="••••••••"
                 className="w-full h-11 px-4 pr-11 rounded-xl bg-slate-900/50 border border-[#ffffff12] text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-gold/40 transition-all"
                 disabled={loading}
                 required
@@ -177,19 +124,15 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
                 <div className="w-3.5 h-3.5 border border-gold/30 border-t-gold rounded-full animate-spin" />
                 Processando...
               </span>
-            ) : mode === 'login' ? (
-              'Entrar Agora'
             ) : (
-              'Criar Conta'
+              'Entrar Agora'
             )}
           </button>
         </form>
 
         {/* Footer */}
         <p className="text-[10px] text-slate-500 text-center mt-6 uppercase tracking-widest">
-          {mode === 'login'
-            ? 'Sem acesso? Crie sua conta abaixo.'
-            : 'Já tem acesso? Faça login acima.'}
+          Sem acesso? Contate seu advogado.
         </p>
       </div>
     </div>
