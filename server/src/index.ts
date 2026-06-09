@@ -437,6 +437,8 @@ app.post('/clients', async (req: AuthRequest, res) => {
 
   try {
     const data = validation.data;
+    console.log(`[POST /clients] Tentando criar: tenantId=${req.tenant.id}, name=${data.name}`);
+
     const client = await prisma.client.create({
       data: {
         tenantId: req.tenant.id,
@@ -453,12 +455,17 @@ app.post('/clients', async (req: AuthRequest, res) => {
         isEncaminhado: data.isEncaminhado
       }
     });
+
+    console.log(`[POST /clients] ✅ Criado: ${client.id}`);
     await logAudit(req.tenant.id, req.tenant.email, 'CREATE', 'Client', client.id, true);
     res.status(201).json(client);
   } catch (error) {
-    await logAudit(req.tenant.id, req.tenant.email, 'CREATE', 'Client', 'unknown', false, String(error));
-    console.error('ERROR creating client:', error);
-    res.status(500).json({ error: 'Erro ao criar cliente' });
+    const errorMsg = (error as any)?.message || String(error);
+    console.error(`[POST /clients] ❌ ERRO:`, errorMsg);
+    console.error(`[POST /clients] Stack:`, (error as any)?.stack?.substring(0, 500));
+
+    await logAudit(req.tenant.id, req.tenant.email, 'CREATE', 'Client', 'unknown', false, errorMsg);
+    res.status(500).json({ error: 'Erro ao criar cliente', debug: errorMsg });
   }
 });
 
