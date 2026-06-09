@@ -12,6 +12,21 @@ const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 4000;
 
+// ─── AUTO-MIGRATE (Garante que as migrations rodem) ────────────────────────
+async function runMigrations() {
+  try {
+    console.log('⚡ Rodando migrations do Prisma...');
+    const { execSync } = require('child_process');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    console.log('✓ Migrations concluídas');
+  } catch (error) {
+    console.warn('⚠️ Aviso ao rodar migrations:', error);
+    // Continua mesmo se migrations falharem
+  }
+}
+
+runMigrations();
+
 // ─── TIPOS ────────────────────────────────────────────────────────────────
 interface AuthPayload {
   id: string;
