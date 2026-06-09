@@ -13,7 +13,11 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  // Em produção (Vercel), aponta para Railway; em dev, aponta para localhost
+  const API_URL = import.meta.env.VITE_API_URL ||
+    (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:4000'
+      : 'https://law-sovereign-web-production.up.railway.app');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
