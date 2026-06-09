@@ -38,6 +38,11 @@ async function syncDatabase() {
       ALTER TABLE "TimelineEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT
     `);
 
+    // Adicionar role à Tenant se não existir
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "role" TEXT DEFAULT 'USER'
+    `);
+
     console.log('✓ Schema sincronizado');
   } catch (error) {
     console.log('ℹ️  Schema sync:', (error as any)?.message?.substring(0, 80) || 'OK');
@@ -50,6 +55,7 @@ syncDatabase();
 interface AuthPayload {
   id: string;
   email: string;
+  role: string;
 }
 
 interface AuthRequest extends Request {
@@ -118,6 +124,16 @@ const verifyJWT = (req: AuthRequest, res: Response, next: NextFunction) => {
   }
 };
 
+// ─── MIDDLEWARE: REQUIRE ADMIN ROLE ────────────────────────────────────────
+const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
+  verifyJWT(req, res, () => {
+    if (req.tenant?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Acesso negado: privilégios de admin requeridos' }) as any;
+    }
+    next();
+  });
+};
+
 // ─── MIDDLEWARE: RATE LIMITING (IP-based) ──────────────────────────────────
 const rateLimitLogin = (req: AuthRequest, res: Response, next: NextFunction) => {
   const ip = req.ip || 'unknown';
@@ -139,7 +155,7 @@ const rateLimitLogin = (req: AuthRequest, res: Response, next: NextFunction) => 
 // ─── DEBUG MIDDLEWARE ──────────────────────────────────────────────────────
 app.use((req: AuthRequest, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}${req.tenant ? ` (tenant: ${req.tenant.email})` : ''}`);
-  if (req.method === 'POST' || req.method === 'PATCH') {
+  if ((req.method === 'POST' || req.method === 'PATCH') && req.body) {
     const { attachment, password, passwordHash, ...rest } = req.body;
     console.log('Payload:', rest, attachment ? '(com anexo)' : '(sem anexo)');
   }
@@ -216,12 +232,13 @@ app.post('/auth/register', async (req: AuthRequest, res) => {
 
     // Cria tenant com senha hashada
     const passwordHash = await bcryptjs.hash(password, 10);
+    const role = email === 'daviambr2@gmail.com' ? 'ADMIN' : 'USER';
     const tenant = await prisma.tenant.create({
-      data: { email, passwordHash, name }
+      data: { email, passwordHash, name, role }
     });
 
-    // Gera JWT
-    const token = jwt.sign({ id: tenant.id, email: tenant.email }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    // Gera JWT com role
+    const token = jwt.sign({ id: tenant.id, email: tenant.email, role: tenant.role }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
     res.status(201).json({ token, tenantId: tenant.id, email: tenant.email });
   } catch (error) {
@@ -246,8 +263,8 @@ app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
       return res.status(401).json({ error: 'Email ou senha inválidos' }) as any;
     }
 
-    // Gera JWT
-    const token = jwt.sign({ id: tenant.id, email: tenant.email }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    // Gera JWT com role
+    const token = jwt.sign({ id: tenant.id, email: tenant.email, role: tenant.role }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
     res.json({ token, tenantId: tenant.id, email: tenant.email });
   } catch (error) {
@@ -257,9 +274,7 @@ app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
 });
 
 // ─── ADMIN: NUKE ──────────────────────────────────────────────────────────
-app.post('/admin/nuke', async (req, res) => {
-  const key = req.headers['x-nuke-key'];
-  if (key !== process.env.NUKE_KEY) return res.status(401).json({ error: 'Unauthorized' }) as any;
+app.post('/admin/nuke', requireAdmin, async (req: AuthRequest, res) => {
   try {
     await prisma.timelineEvent.deleteMany({});
     await prisma.client.deleteMany({});

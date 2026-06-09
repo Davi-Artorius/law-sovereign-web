@@ -12,6 +12,7 @@ model Tenant {
   email         String    @unique
   passwordHash  String
   name          String
+  role          String    @default("USER")  // "ADMIN" ou "USER"
   createdAt     DateTime  @default(now())
 
   clients       Client[]

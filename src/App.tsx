@@ -48,20 +48,20 @@ function AppInner() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const userEmail = (() => {
+  const { userEmail, userRole } = (() => {
     const auth = localStorage.getItem('auth');
     if (auth) {
       try {
-        const { email } = JSON.parse(auth);
-        return email || 'Usuário';
+        const { email, role } = JSON.parse(auth);
+        return { userEmail: email || 'Usuário', userRole: role || 'USER' };
       } catch {
-        return 'Usuário';
+        return { userEmail: 'Usuário', userRole: 'USER' };
       }
     }
-    return 'Usuário';
+    return { userEmail: 'Usuário', userRole: 'USER' };
   })();
 
-  const isAdmin = userEmail === 'daviambr2@gmail.com';
+  const isAdmin = userRole === 'ADMIN';
 
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
