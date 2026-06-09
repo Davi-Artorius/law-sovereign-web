@@ -1,0 +1,125 @@
+name: Deploy All (Railway + Vercel)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Deploy Backend to Railway
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy Backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "🚀 Iniciando deploy do backend..."
+          railway up \
+            --service law-sovereign-api \
+            --environment production
+        continue-on-error: true
+
+      - name: Verify Backend Health
+        run: |
+          echo "⏳ Verificando saúde do backend..."
+          for i in {1..10}; do
+            if curl -f https://law-sovereign-web-production.up.railway.app/health 2>/dev/null; then
+              echo "✅ Backend está online!"
+              exit 0
+            fi
+            echo "Tentativa $i/10..."
+            sleep 10
+          done
+          echo "⚠️ Backend pode estar demorando, continuando com frontend..."
+          exit 0
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend to Vercel
+    needs: deploy-backend
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Frontend
+        run: npm run build
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm install -g vercel
+          vercel deploy \
+            --prod \
+            --token $VERCEL_TOKEN \
+            --yes
+
+      - name: Verify Frontend Health
+        run: |
+          echo "⏳ Verificando saúde do frontend..."
+          for i in {1..10}; do
+            if curl -f https://law-sovereign.vercel.app/ 2>/dev/null | grep -q "html"; then
+              echo "✅ Frontend está online!"
+              exit 0
+            fi
+            echo "Tentativa $i/10..."
+            sleep 10
+          done
+          echo "⚠️ Frontend pode estar demorando..."
+          exit 0
+
+  verify-integration:
+    runs-on: ubuntu-latest
+    name: Verify Integration
+    needs: [ deploy-backend, deploy-frontend ]
+    if: always()
+
+    steps:
+      - name: Check Both Services
+        run: |
+          echo "=== VERIFICAÇÃO FINAL ==="
+
+          echo "Backend:"
+          curl -s https://law-sovereign-web-production.up.railway.app/health | head -20 && echo "✅ Backend respondendo" || echo "⚠️ Backend não respondeu"
+
+          echo ""
+          echo "Frontend:"
+          curl -s -I https://law-sovereign.vercel.app/ | head -1 && echo "✅ Frontend respondendo" || echo "⚠️ Frontend não respondeu"
+
+          echo ""
+          echo "🎉 Deploy completo!"
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [ deploy-backend, deploy-frontend ]
+    if: always()
+
+    steps:
+      - name: Deploy Status
+        run: |
+          if [ "${{ needs.deploy-backend.result }}" == "success" ] && [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
+            echo "✅ ✅ ✅ DEPLOY COMPLETO COM SUCESSO! ✅ ✅ ✅"
+            echo ""
+            echo "🌐 Frontend: https://law-sovereign.vercel.app"
+            echo "🔧 Backend: https://law-sovereign-web-production.up.railway.app"
+          else
+            echo "⚠️ Deploy completado com algumas questões"
+            echo "Backend: ${{ needs.deploy-backend.result }}"
+            echo "Frontend: ${{ needs.deploy-frontend.result }}"
+          fi

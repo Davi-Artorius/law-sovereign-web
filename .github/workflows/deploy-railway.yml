@@ -1,0 +1,54 @@
+name: Deploy Backend to Railway
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-railway.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway up \
+            --service law-sovereign-api \
+            --environment production
+
+      - name: Verify Deployment
+        run: |
+          echo "⏳ Aguardando 30 segundos para API estar pronta..."
+          sleep 30
+
+          curl -f https://law-sovereign-web-production.up.railway.app/health || {
+            echo "❌ Health check falhou"
+            exit 1
+          }
+
+          echo "✅ Backend deploy bem-sucedido!"
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Notify on Success
+        if: needs.deploy.result == 'success'
+        run: echo "✅ Backend deployado com sucesso para Railway!"
+
+      - name: Notify on Failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deploy do backend falhou"
+          exit 1

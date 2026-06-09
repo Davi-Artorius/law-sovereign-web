@@ -1,0 +1,67 @@
+name: Deploy Frontend to Vercel
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'vite.config.ts'
+      - '.github/workflows/deploy-vercel.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_API_URL: https://law-sovereign-web-production.up.railway.app
+          VITE_INTERNAL_API_KEY: ${{ secrets.VITE_INTERNAL_API_KEY }}
+        run: |
+          vercel deploy \
+            --prod \
+            --token $VERCEL_TOKEN
+
+      - name: Verify Deployment
+        run: |
+          echo "⏳ Aguardando 30 segundos para frontend estar pronto..."
+          sleep 30
+
+          curl -f https://law-sovereign.vercel.app/ || {
+            echo "❌ Frontend health check falhou"
+            exit 1
+          }
+
+          echo "✅ Frontend deploy bem-sucedido!"
+
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Notify on Success
+        if: needs.deploy.result == 'success'
+        run: echo "✅ Frontend deployado com sucesso para Vercel!"
+
+      - name: Notify on Failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deploy do frontend falhou"
+          exit 1
