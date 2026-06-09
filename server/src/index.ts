@@ -82,7 +82,6 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (origin?.includes('.vercel.app')) return callback(null, true);
     if (origin?.startsWith('http://localhost') || origin?.startsWith('http://127.0.0.1')) return callback(null, true);
     callback(new Error(`Origem bloqueada pelo CORS: ${origin}`));
   }
@@ -92,8 +91,13 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ─── JWT SECRET ────────────────────────────────────────────────────────────
-// Maelstrom: Usa INTERNAL_API_KEY como JWT_SECRET. Em produção, pode ser variável dedicada.
-const JWT_SECRET = process.env.INTERNAL_API_KEY || 'dev-secret-insecure';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.INTERNAL_API_KEY;
+if (!JWT_SECRET || JWT_SECRET === 'dev-secret-insecure') {
+  console.error('❌ ERRO CRÍTICO: JWT_SECRET não configurado em produção!');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
 const JWT_EXPIRY = '7d';
 
 // ─── MIDDLEWARE: JWT VALIDATION ────────────────────────────────────────────

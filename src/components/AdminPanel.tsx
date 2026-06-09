@@ -43,7 +43,7 @@ export function AdminPanel({ onClose }: AdminPanelProps) {
         name
       }, {
         headers: {
-          'x-api-key': 'abac2c9fcb440acb5bcde816752a134b5344604d67ab24005331c12d5272bacd'
+          'x-api-key': import.meta.env.VITE_INTERNAL_API_KEY || ''
         }
       });
 

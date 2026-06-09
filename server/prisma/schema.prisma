@@ -34,6 +34,7 @@ model Client {
   costOfWaiting   Float?
   missingProofs   String?
   isPaperLead     Boolean         @default(false)
+  isEncaminhado   Boolean         @default(false)
   phone           String?
 
   createdAt       DateTime        @default(now())
