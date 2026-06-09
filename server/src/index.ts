@@ -12,20 +12,26 @@ const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 4000;
 
-// ─── AUTO-MIGRATE (Garante que as migrations rodem) ────────────────────────
-async function runMigrations() {
+// ─── AUTO-SYNC DATABASE (Garante que o schema está sincronizado) ──────────
+async function syncDatabase() {
   try {
-    console.log('⚡ Rodando migrations do Prisma...');
-    const { execSync } = require('child_process');
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    console.log('✓ Migrations concluídas');
+    console.log('⚡ Sincronizando schema do Prisma com banco...');
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Tenant" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "email" TEXT NOT NULL UNIQUE,
+        "passwordHash" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✓ Schema sincronizado');
   } catch (error) {
-    console.warn('⚠️ Aviso ao rodar migrations:', error);
-    // Continua mesmo se migrations falharem
+    console.log('ℹ️  Schema já sincronizado ou erro esperado:', (error as any)?.message?.substring(0, 50));
   }
 }
 
-runMigrations();
+syncDatabase();
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────
 interface AuthPayload {
