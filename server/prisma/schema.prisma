@@ -40,9 +40,11 @@ model Client {
   phone           String?
 
   createdAt       DateTime        @default(now())
+  deletedAt       DateTime?       // Soft delete: null = ativo, non-null = deletado
   events          TimelineEvent[]
 
   @@index([tenantId])
+  @@index([deletedAt])
 }
 
 model TimelineEvent {

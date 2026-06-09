@@ -341,7 +341,7 @@ app.post('/admin/nuke', requireAdmin, async (req: AuthRequest, res) => {
     res.json({ success: true, message: '☢️ All data nuked' });
   } catch (error) {
     console.error('[NUKE ERROR]', error);
-    res.status(500).json({ error: String(error) });
+    res.status(500).json({ error: 'Erro ao executar operação. Contate o administrador.' });
   }
 });
 
@@ -352,8 +352,9 @@ app.get('/clients', async (req: AuthRequest, res) => {
 
     // Busca clientes sem eventos na lista (eventos carregam sob demanda via /clients/:id/events)
     // Evita N+1 e reduz payload ao cliente
+    // Filtra deletados (soft delete): mostra apenas clientes com deletedAt = null
     const clients = await prisma.client.findMany({
-      where: { tenantId: req.tenant.id },
+      where: { tenantId: req.tenant.id, deletedAt: null },
       orderBy: { createdAt: 'desc' }
     });
     res.json(clients);
@@ -461,7 +462,11 @@ app.delete('/clients/:id', async (req: AuthRequest, res) => {
       return res.status(403).json({ error: 'Acesso negado' }) as any;
     }
 
-    await prisma.client.delete({ where: { id } });
+    // Soft delete: marca como deletado mas mantém dados para auditoria
+    await prisma.client.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
     await logAudit(req.tenant.id, req.tenant.email, 'DELETE', 'Client', id, true);
     res.json({ success: true });
   } catch (error) {
@@ -580,6 +585,13 @@ app.post('/ocr', rateLimitOCR, async (req: AuthRequest, res) => {
 
   const { image, mimeType } = req.body;
   if (!image) return res.status(400).json({ error: 'Imagem não fornecida' }) as any;
+
+  // Validação MIME type: apenas imagens aceitas
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const mime = mimeType || 'image/jpeg';
+  if (!allowedMimeTypes.includes(mime)) {
+    return res.status(400).json({ error: `Tipo de arquivo não suportado. Aceitos: ${allowedMimeTypes.join(', ')}` }) as any;
+  }
 
   try {
     const response = await ocrClient.chat.completions.create({
