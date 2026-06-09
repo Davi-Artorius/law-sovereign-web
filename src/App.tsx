@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import {
   Search, PlusCircle, Layers, LayoutGrid, Stethoscope,
-  X, ShieldCheck, BarChart2, Menu, Camera, FileText, Check, CheckCircle, Share2, AlertTriangle
+  X, ShieldCheck, BarChart2, Menu, Camera, FileText, Check, CheckCircle, Share2, AlertTriangle, LogOut
 } from 'lucide-react';
 
 // Tipos e Constantes
@@ -262,6 +262,12 @@ function AppInner() {
     reader.readAsDataURL(file);
   }, [toast]);
 
+  const handleLogout = useCallback(() => {
+    if (!window.confirm('Tem certeza que deseja sair?')) return;
+    localStorage.removeItem('auth');
+    window.location.reload();
+  }, []);
+
   // ─── ANALYTICS (useMemo) ───────────────────────────────────────────────────
   
   const filteredClients = useMemo(() => {
@@ -394,7 +400,7 @@ function AppInner() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#ffffff0a]">
+        <div className="p-4 border-t border-[#ffffff0a] space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-xs text-gold font-bold">AR</div>
             <div>
@@ -402,6 +408,12 @@ function AppInner() {
               <p className="text-[10px] text-slate-400 uppercase tracking-wide">Sovereign Admin</p>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500/20 hover:border-red-500/50 transition-all active:scale-95"
+          >
+            <LogOut size={14} /> Sair
+          </button>
         </div>
       </aside>
 
