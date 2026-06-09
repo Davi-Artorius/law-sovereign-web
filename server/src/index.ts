@@ -684,17 +684,23 @@ app.get('/portal/:id', async (req, res) => {
   const { id } = req.params as { id: string };
   try {
     const client = await prisma.client.findUnique({
-      where: { id },
-      include: { events: { orderBy: { date: 'desc' }, take: 5 } }
+      where: { id }
     });
     if (!client) return res.status(404).json({ error: 'Dossier não encontrado' }) as any;
+
+    const events = await prisma.timelineEvent.findMany({
+      where: { clientId: id },
+      orderBy: { date: 'desc' },
+      take: 5
+    });
+
     res.json({
       name: client.name,
       area: client.area,
       status: client.status,
       lastAction: client.lastAction,
       createdAt: client.createdAt,
-      events: client.events.map(e => ({ date: e.date, type: e.type, content: e.content }))
+      events: events.map(e => ({ date: e.date, type: e.type, content: e.content }))
     });
   } catch (error) {
     console.error(error);
