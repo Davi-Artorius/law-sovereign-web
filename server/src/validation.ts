@@ -11,7 +11,7 @@ export const createClientSchema = z.object({
   missingProofs: z.string().max(1000).optional(),
   isPaperLead: z.boolean().default(false),
   isEncaminhado: z.boolean().default(false),
-  phone: z.string().max(20).optional(),
+  phone: z.string().regex(/^[0-9+\-() ]*$/, 'Phone contém caracteres inválidos').max(20).optional(),
 });
 
 export const updateClientSchema = createClientSchema.partial();
