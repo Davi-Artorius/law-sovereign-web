@@ -108,7 +108,7 @@ app.use((req: AuthRequest, res, next) => {
 });
 
 // ─── ROTAS PÚBLICAS ───────────────────────────────────────────────────────
-const PUBLIC_PATHS = ['/auth/login', '/capture', '/health', '/debug'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/capture', '/health', '/debug'];
 
 app.use((req: AuthRequest, res, next) => {
   const isPublic = PUBLIC_PATHS.includes(req.path) || req.path.startsWith('/portal/');

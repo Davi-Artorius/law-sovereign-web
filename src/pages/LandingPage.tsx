@@ -572,6 +572,20 @@ export function LandingPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />
             </div>
+            <div style={{
+              background: `rgba(15, 24, 35, 0.4)`,
+              border: `2px solid ${COLORS.border}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              minHeight: '900px',
+              boxShadow: `0 32px 96px rgba(201, 162, 39, 0.15)`,
+            }}>
+              <img
+                src="/mockups/proposta.png"
+                alt="Proposta Law Sovereign"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
           </div>
         </div>
       </section>

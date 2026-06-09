@@ -1,14 +1,15 @@
 import { Scale, StickyNote, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import type { EventType } from '../domain';
 
-export const AREAS = ['Civil', 'Trabalhista', 'Penal', 'Família', 'Empresarial'] as const;
+export const AREAS = ['Civil', 'Trabalhista', 'Criminal', 'Comercial', 'Tributário', 'Imobiliário'] as const;
 
 export const AREA_STYLE: Record<string, { bg: string; text: string; border: string }> = {
   Civil:       { bg: 'rgba(59,130,246,0.08)',  text: '#93c5fd', border: 'rgba(59,130,246,0.25)'  },
   Trabalhista: { bg: 'rgba(168,85,247,0.08)',  text: '#c084fc', border: 'rgba(168,85,247,0.25)'  },
-  Penal:       { bg: 'rgba(239,68,68,0.08)',   text: '#fca5a5', border: 'rgba(239,68,68,0.25)'   },
-  Família:     { bg: 'rgba(236,72,153,0.08)',  text: '#f9a8d4', border: 'rgba(236,72,153,0.25)'  },
-  Empresarial: { bg: 'rgba(200,169,110,0.08)', text: '#c8a96e', border: 'rgba(200,169,110,0.25)' },
+  Criminal:    { bg: 'rgba(239,68,68,0.08)',   text: '#fca5a5', border: 'rgba(239,68,68,0.25)'   },
+  Comercial:   { bg: 'rgba(34,197,94,0.08)',   text: '#86efac', border: 'rgba(34,197,94,0.25)'   },
+  Tributário:  { bg: 'rgba(236,72,153,0.08)',  text: '#f9a8d4', border: 'rgba(236,72,153,0.25)'  },
+  Imobiliário: { bg: 'rgba(200,169,110,0.08)', text: '#c8a96e', border: 'rgba(200,169,110,0.25)' },
 };
 
 export const EVENT_META: Record<EventType, { icon: any; color: string; border: string; bg: string }> = {
