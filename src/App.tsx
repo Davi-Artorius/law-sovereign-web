@@ -61,6 +61,8 @@ function AppInner() {
     return 'Usuário';
   })();
 
+  const isAdmin = userEmail === 'daviambr2@gmail.com';
+
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -419,15 +421,17 @@ function AppInner() {
             <div className="w-9 h-9 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center font-serif text-xs text-gold font-bold">{userEmail.charAt(0).toUpperCase()}</div>
             <div>
               <p className="text-sm font-semibold text-slate-100 truncate">{userEmail}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wide">Logged In</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-wide">{isAdmin ? 'Sovereign Admin' : 'Advogado'}</p>
             </div>
           </div>
-          <button
-            onClick={() => setIsAdminPanelOpen(true)}
-            className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
-          >
-            <Plus size={14} /> Registrar Cliente
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsAdminPanelOpen(true)}
+              className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
+            >
+              <Plus size={14} /> Registrar Cliente
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500/20 hover:border-red-500/50 transition-all active:scale-95"
