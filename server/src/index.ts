@@ -40,8 +40,26 @@ async function syncDatabaseSchema() {
   }
 }
 
-// Run schema sync on startup (non-blocking)
+// Ensure daviambr2@gmail.com is ADMIN on startup
+async function ensureAdminRole() {
+  try {
+    console.log('🔐 Garantindo que daviambr2@gmail.com é ADMIN...');
+    await prisma.tenant.updateMany({
+      where: { email: 'daviambr2@gmail.com' },
+      data: { role: 'ADMIN' }
+    });
+    console.log('✅ Admin role garantido');
+  } catch (e) {
+    console.warn('⚠️  Falha ao atualizar admin role:', (e as any).message);
+  }
+}
+
+// Run schema sync and admin role setup on startup (non-blocking)
 syncDatabaseSchema().catch(() => {
+  // Ignore errors
+});
+
+ensureAdminRole().catch(() => {
   // Ignore errors
 });
 
