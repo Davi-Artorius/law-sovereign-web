@@ -355,9 +355,10 @@ app.get('/clients', async (req: AuthRequest, res) => {
   try {
     if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
+    // Busca clientes sem eventos na lista (eventos carregam sob demanda via /clients/:id/events)
+    // Evita N+1 e reduz payload ao cliente
     const clients = await prisma.client.findMany({
       where: { tenantId: req.tenant.id },
-      include: { events: { select: { id: true, clientId: true, type: true, content: true, date: true } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json(clients);
