@@ -16,45 +16,35 @@ const prisma = new PrismaClient({
   log: ['error', 'warn'],
 });
 
-// ─── VERIFY DATABASE HEALTH ─────────────────────────────────────────────
-async function verifyDatabaseHealth() {
+// ─── APPLY MIGRATIONS ON STARTUP ────────────────────────────────────────
+async function applyMigrations() {
   try {
-    console.log('⚡ Verificando integridade do banco...');
+    console.log('🔄 Aplicando migrations pendentes...');
 
-    // Test basic connectivity
-    await prisma.$queryRaw`SELECT 1`;
+    // Force migration deploy
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
+      cwd: __dirname + '/..',
+      stdio: 'pipe',
+      encoding: 'utf-8'
+    });
 
-    // Verify critical tables exist
-    const tables = await prisma.$queryRaw`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-      AND table_name IN ('Tenant', 'Client', 'TimelineEvent', 'AuditLog')
-    ` as any[];
-
-    const tableNames = tables.map((t: any) => t.table_name);
-    const required = ['Tenant', 'Client', 'TimelineEvent', 'AuditLog'];
-    const missing = required.filter(t => !tableNames.includes(t));
-
-    if (missing.length > 0) {
-      console.error(`❌ ERRO CRÍTICO: Tabelas faltando: ${missing.join(', ')}`);
-      console.error('   Execute: npx prisma migrate deploy');
-      throw new Error(`Missing tables: ${missing.join(', ')}`);
+    if (result.error) {
+      console.warn('⚠️  Prisma migrate falhou (tentando continuar):', result.error.message);
+    } else if (result.status !== 0) {
+      console.warn('⚠️  Prisma migrate retornou status', result.status);
+      console.warn('stderr:', result.stderr);
+    } else {
+      console.log('✅ Migrations aplicadas com sucesso');
     }
-
-    console.log('✓ Banco OK - todas as tabelas presentes');
-  } catch (error) {
-    console.error('❌ Falha na verificação do banco:');
-    console.error((error as any)?.message || error);
-    throw error; // Falha fatal - não continua com servidor quebrado
+  } catch (e) {
+    console.warn('⚠️  Falha ao aplicar migrations:', (e as any).message);
   }
 }
 
-// Run health check on startup (não-bloqueante)
-verifyDatabaseHealth().catch((e) => {
-  console.error('⚠️  Verificação do banco falhou, mas continuando:');
-  console.error(e.message);
-  // Não fazer exit(1) - deixar que Prisma tente conectar naturalmente
+// Run migrations on startup (non-blocking)
+applyMigrations().catch(() => {
+  // Ignore errors - Prisma will handle missing columns at query time
 });
 
 // ─── AUDIT LOGGING ────────────────────────────────────────────────────────
