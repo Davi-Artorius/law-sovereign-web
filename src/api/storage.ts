@@ -3,23 +3,31 @@ import type { Client, TimelineEvent } from '../domain';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-// ─── AUTENTICAÇÃO ─────────────────────────────────────────────────────────────
-// A chave interna é enviada automaticamente em toda requisição.
-// Configure VITE_INTERNAL_API_KEY no painel do Vercel com o mesmo valor
-// que INTERNAL_API_KEY no Railway.
-const INTERNAL_API_KEY = import.meta.env.VITE_INTERNAL_API_KEY as string | undefined;
-if (INTERNAL_API_KEY) {
-  axios.defaults.headers.common['x-api-key'] = INTERNAL_API_KEY;
-}
+// ─── AUTENTICAÇÃO JWT ─────────────────────────────────────────────────────────
+// Ao fazer login, token é armazenado no localStorage e axios é configurado
+// para enviar Authorization: Bearer <token> em toda requisição protegida.
+
+export const setToken = (token: string) => {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+};
+
+export const logout = () => {
+  localStorage.removeItem('auth');
+  delete axios.defaults.headers.common['Authorization'];
+  window.location.reload();
+};
 
 export const storage = {
-  // Maelstrom: Agora buscando dados REAIS da API
+  setToken,
+  logout,
+
+  // Maelstrom: Agora buscando dados REAIS da API com JWT
   getClients: async (): Promise<Client[]> => {
     try {
       const response = await axios.get(`${API_URL}/clients`);
       return response.data;
     } catch (e) {
-      console.error('Maelstrom: Erro ao buscar clientes da API', e);
+      console.error('Erro ao buscar clientes da API', e);
       return [];
     }
   },
@@ -53,8 +61,7 @@ export const storage = {
   },
 
   nuclearReset: async (): Promise<void> => {
-    localStorage.clear();
-    window.location.reload();
+    logout();
   },
 
   runOCR: async (imageDataUrl: string): Promise<{ name?: string; phone?: string; area?: string; case?: string }> => {

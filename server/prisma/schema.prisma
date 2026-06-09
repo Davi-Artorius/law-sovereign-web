@@ -7,8 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime  @default(now())
+
+  clients       Client[]
+  events        TimelineEvent[]
+}
+
 model Client {
   id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   name            String
   status          String        @default("TRIAGEM")
   lastAction      String
@@ -24,14 +38,21 @@ model Client {
 
   createdAt       DateTime        @default(now())
   events          TimelineEvent[]
+
+  @@index([tenantId])
 }
 
 model TimelineEvent {
   id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   clientId   String
   client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   date       String
   type       String
   content    String
-  attachment Json?    
+  attachment Json?
+
+  @@index([tenantId])
+  @@index([clientId])
 }

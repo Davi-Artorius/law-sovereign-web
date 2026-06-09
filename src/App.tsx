@@ -599,14 +599,23 @@ function AppInner() {
 
 function AuthGate() {
   const [authenticated, setAuthenticated] = useState(() => {
-    const pw = import.meta.env.VITE_APP_PASSWORD as string | undefined;
-    if (!pw) return true;
-    return sessionStorage.getItem('ls_auth') === 'true';
+    const auth = localStorage.getItem('auth');
+    if (auth) {
+      try {
+        const { token } = JSON.parse(auth);
+        if (token) {
+          // Restaura token no axios
+          storage.setToken(token);
+          return true;
+        }
+      } catch {}
+    }
+    return false;
   });
 
   if (!authenticated) {
-    return <LoginScreen onAuth={() => {
-      sessionStorage.setItem('ls_auth', 'true');
+    return <LoginScreen onAuth={(token: string, email: string) => {
+      // Token já foi salvo no localStorage e axios em LoginScreen
       setAuthenticated(true);
     }} />;
   }
