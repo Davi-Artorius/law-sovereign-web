@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { createClientSchema, updateClientSchema, createEventSchema, registerSchema, loginSchema } from './validation';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
@@ -213,15 +214,14 @@ app.post('/auth/register', async (req: AuthRequest, res) => {
     return res.status(401).json({ error: 'Não autorizado — use ./register-user.sh' }) as any;
   }
 
-  const { email, password, name } = req.body;
+  // Validação com Zod
+  const validation = registerSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return res.status(400).json({ error: `Validação falhou: ${errors}` }) as any;
+  }
 
-  // Validação
-  if (!email || !password || !name) {
-    return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' }) as any;
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'Senha deve ter no mínimo 8 caracteres' }) as any;
-  }
+  const { email, password, name } = validation.data;
 
   try {
     // Verifica email duplicado
@@ -249,11 +249,14 @@ app.post('/auth/register', async (req: AuthRequest, res) => {
 
 // ─── AUTH: LOGIN ───────────────────────────────────────────────────────────
 app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email e senha são obrigatórios' }) as any;
+  // Validação com Zod
+  const validation = loginSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return res.status(400).json({ error: `Validação falhou: ${errors}` }) as any;
   }
+
+  const { email, password } = validation.data;
 
   try {
     const tenant = await prisma.tenant.findUnique({ where: { email } });
@@ -318,20 +321,31 @@ app.get('/clients/:id/events', async (req: AuthRequest, res) => {
 });
 
 app.post('/clients', async (req: AuthRequest, res) => {
-  const { name, status, case: caseDesc, area, lastAction, phone } = req.body as any;
-  try {
-    if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
-    const today = new Date().toISOString().split('T')[0];
+  // Validação com Zod
+  const validation = createClientSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return res.status(400).json({ error: `Validação falhou: ${errors}` }) as any;
+  }
+
+  try {
+    const data = validation.data;
     const client = await prisma.client.create({
       data: {
         tenantId: req.tenant.id,
-        name,
-        status: status || 'TRIAGEM',
-        case: caseDesc || 'Novo caso',
-        area,
-        lastAction: lastAction || today,
-        phone: phone || null
+        name: data.name,
+        status: data.status,
+        case: data.case,
+        area: data.area,
+        lastAction: data.lastAction,
+        phone: data.phone || null,
+        chanceOfSuccess: data.chanceOfSuccess,
+        costOfWaiting: data.costOfWaiting,
+        missingProofs: data.missingProofs,
+        isPaperLead: data.isPaperLead,
+        isEncaminhado: data.isEncaminhado
       }
     });
     res.status(201).json(client);
@@ -343,10 +357,16 @@ app.post('/clients', async (req: AuthRequest, res) => {
 
 app.patch('/clients/:id', async (req: AuthRequest, res) => {
   const { id } = req.params as { id: string };
-  const data = req.body as any;
-  try {
-    if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
+  // Validação com Zod (partial)
+  const validation = updateClientSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return res.status(400).json({ error: `Validação falhou: ${errors}` }) as any;
+  }
+
+  try {
     // Verifica se cliente pertence ao tenant
     const client = await prisma.client.findUnique({ where: { id } });
     if (!client || client.tenantId !== req.tenant.id) {
@@ -355,7 +375,7 @@ app.patch('/clients/:id', async (req: AuthRequest, res) => {
 
     const updated = await prisma.client.update({
       where: { id },
-      data
+      data: validation.data
     });
     res.json(updated);
   } catch (error) {
@@ -385,18 +405,25 @@ app.delete('/clients/:id', async (req: AuthRequest, res) => {
 
 // ─── TIMELINE EVENTS ────────────────────────────────────────────────────────
 app.post('/events', async (req: AuthRequest, res) => {
-  const { clientId, type, content, date, attachment } = req.body as any;
-  try {
-    if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
+  // Validação com Zod
+  const validation = createEventSchema.safeParse(req.body);
+  if (!validation.success) {
+    const errors = validation.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return res.status(400).json({ error: `Validação falhou: ${errors}` }) as any;
+  }
+
+  try {
+    const data = validation.data;
     // Verifica se cliente pertence ao tenant
-    const client = await prisma.client.findUnique({ where: { id: clientId } });
+    const client = await prisma.client.findUnique({ where: { id: data.clientId } });
     if (!client || client.tenantId !== req.tenant.id) {
       return res.status(403).json({ error: 'Acesso negado' }) as any;
     }
 
     const event = await prisma.timelineEvent.create({
-      data: { tenantId: req.tenant.id, clientId, type, content, date, attachment }
+      data: { tenantId: req.tenant.id, clientId: data.clientId, type: data.type, content: data.content, date: data.date, attachment: data.attachment }
     });
     res.status(201).json(event);
   } catch (error) {
