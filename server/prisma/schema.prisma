@@ -17,6 +17,7 @@ model Tenant {
 
   clients       Client[]
   events        TimelineEvent[]
+  auditLogs     AuditLog[]
 }
 
 model Client {
@@ -57,4 +58,22 @@ model TimelineEvent {
 
   @@index([tenantId])
   @@index([clientId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email          String   // Email do usuário que realizou a ação
+  action         String   // CREATE, READ, UPDATE, DELETE, LOGIN, NUKE
+  resourceType   String   // Client, TimelineEvent, Tenant, etc
+  resourceId     String   // ID do recurso afetado
+  success        Boolean  @default(true)
+  error          String?  // Mensagem de erro se falhou
+  metadata       Json?    // Dados adicionais (e.g. valores antigos/novos para UPDATE)
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([createdAt])
+  @@index([email])
 }

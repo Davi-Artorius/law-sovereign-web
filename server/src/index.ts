@@ -52,6 +52,25 @@ async function syncDatabase() {
 
 syncDatabase();
 
+// ─── AUDIT LOGGING ────────────────────────────────────────────────────────
+async function logAudit(tenantId: string, email: string, action: string, resourceType: string, resourceId: string, success: boolean, error?: string) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        email,
+        action,
+        resourceType,
+        resourceId,
+        success,
+        error
+      }
+    });
+  } catch (e) {
+    console.error('Erro ao registrar audit log:', e);
+  }
+}
+
 // ─── TIPOS ────────────────────────────────────────────────────────────────
 interface AuthPayload {
   id: string;
@@ -288,8 +307,12 @@ app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
 
     // Erro genérico: não diz se email existe ou não
     if (!tenant || !(await bcryptjs.compare(password, tenant.passwordHash))) {
+      await logAudit('unknown', email, 'LOGIN', 'Tenant', email, false, 'Invalid credentials');
       return res.status(401).json({ error: 'Email ou senha inválidos' }) as any;
     }
+
+    // Log sucesso
+    await logAudit(tenant.id, tenant.email, 'LOGIN', 'Tenant', tenant.id, true);
 
     // Gera JWT com role
     const token = jwt.sign({ id: tenant.id, email: tenant.email, role: tenant.role }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
@@ -307,8 +330,22 @@ app.post('/admin/nuke', requireAdmin, async (req: AuthRequest, res) => {
     await prisma.timelineEvent.deleteMany({});
     await prisma.client.deleteMany({});
     await prisma.tenant.deleteMany({});
+
+    // Log crítico: NUKE apaga TUDO
+    await prisma.auditLog.create({
+      data: {
+        tenantId: 'SYSTEM',
+        email: req.tenant!.email,
+        action: 'NUKE',
+        resourceType: 'SYSTEM',
+        resourceId: 'all_data',
+        success: true
+      }
+    });
+
     res.json({ success: true, message: '☢️ All data nuked' });
   } catch (error) {
+    console.error('[NUKE ERROR]', error);
     res.status(500).json({ error: String(error) });
   }
 });
@@ -373,8 +410,10 @@ app.post('/clients', async (req: AuthRequest, res) => {
         isEncaminhado: data.isEncaminhado
       }
     });
+    await logAudit(req.tenant.id, req.tenant.email, 'CREATE', 'Client', client.id, true);
     res.status(201).json(client);
   } catch (error) {
+    await logAudit(req.tenant.id, req.tenant.email, 'CREATE', 'Client', 'unknown', false, String(error));
     console.error('ERROR creating client:', error);
     res.status(500).json({ error: 'Erro ao criar cliente' });
   }
@@ -403,11 +442,13 @@ app.patch('/clients/:id', async (req: AuthRequest, res) => {
         data: validation.data
       });
     });
+    await logAudit(req.tenant.id, req.tenant.email, 'UPDATE', 'Client', id, true);
     res.json(updated);
   } catch (error: any) {
     if (error.message === 'Acesso negado') {
       return res.status(403).json({ error: 'Acesso negado' }) as any;
     }
+    await logAudit(req.tenant.id, req.tenant.email, 'UPDATE', 'Client', id, false, String(error));
     console.error(error);
     res.status(500).json({ error: 'Erro ao atualizar cliente' });
   }
@@ -425,8 +466,10 @@ app.delete('/clients/:id', async (req: AuthRequest, res) => {
     }
 
     await prisma.client.delete({ where: { id } });
+    await logAudit(req.tenant.id, req.tenant.email, 'DELETE', 'Client', id, true);
     res.json({ success: true });
   } catch (error) {
+    await logAudit(req.tenant!.id, req.tenant!.email, 'DELETE', 'Client', id, false, String(error));
     console.error(error);
     res.status(500).json({ error: 'Erro ao deletar cliente' });
   }
