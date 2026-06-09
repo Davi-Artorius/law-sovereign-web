@@ -501,12 +501,14 @@ function AppInner() {
                 />
               </div>
             )}
-            <button 
-              onClick={() => setIsAddingClient(true)}
-              className="flex items-center gap-2 h-9 px-4 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
-            >
-              <PlusCircle size={14} /> {!isMobile && 'Novo Dossier'}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsAddingClient(true)}
+                className="flex items-center gap-2 h-9 px-4 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
+              >
+                <PlusCircle size={14} /> {!isMobile && 'Novo Dossier'}
+              </button>
+            )}
           </div>
         </header>
 
