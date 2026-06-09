@@ -626,7 +626,7 @@ function AuthGate() {
   });
 
   if (!authenticated) {
-    return <LoginScreen onAuth={(token: string, email: string) => {
+    return <LoginScreen onAuth={(_token: string, _email: string) => {
       // Token já foi salvo no localStorage e axios em LoginScreen
       setAuthenticated(true);
     }} />;
