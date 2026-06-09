@@ -68,6 +68,11 @@ const rateLimitStore: Record<string, { count: number; timestamp: number }> = {};
 const RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutos
 const RATE_LIMIT_MAX = 5; // 5 tentativas
 
+// Rate limiting para OCR por tenant: { tenantId: { count, timestamp } }
+const ocrRateLimitStore: Record<string, { count: number; timestamp: number }> = {};
+const OCR_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
+const OCR_RATE_LIMIT_MAX = 5; // 5 requisições por minuto
+
 // ─── OCR via Gemini ────────────────────────────────────────────────────
 const OCR_MODEL = process.env.OCR_MODEL || 'gemini-2.5-flash';
 const ocrClient = process.env.GEMINI_API_KEY
@@ -148,6 +153,26 @@ const rateLimitLogin = (req: AuthRequest, res: Response, next: NextFunction) => 
     }
   } else {
     rateLimitStore[ip] = { count: 1, timestamp: now };
+  }
+
+  next();
+};
+
+// ─── MIDDLEWARE: RATE LIMITING OCR (por tenant) ────────────────────────────
+const rateLimitOCR = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+
+  const tenantId = req.tenant.id;
+  const now = Date.now();
+  const record = ocrRateLimitStore[tenantId];
+
+  if (record && now - record.timestamp < OCR_RATE_LIMIT_WINDOW) {
+    record.count++;
+    if (record.count > OCR_RATE_LIMIT_MAX) {
+      return res.status(429).json({ error: `Limite de OCR excedido. Máximo ${OCR_RATE_LIMIT_MAX} requisições por minuto.` }) as any;
+    }
+  } else {
+    ocrRateLimitStore[tenantId] = { count: 1, timestamp: now };
   }
 
   next();
@@ -367,18 +392,22 @@ app.patch('/clients/:id', async (req: AuthRequest, res) => {
   }
 
   try {
-    // Verifica se cliente pertence ao tenant
-    const client = await prisma.client.findUnique({ where: { id } });
-    if (!client || client.tenantId !== req.tenant.id) {
-      return res.status(403).json({ error: 'Acesso negado' }) as any;
-    }
-
-    const updated = await prisma.client.update({
-      where: { id },
-      data: validation.data
+    // Usa transação para evitar race condition: verifica acesso e atualiza atomicamente
+    const updated = await prisma.$transaction(async (tx) => {
+      const client = await tx.client.findUnique({ where: { id } });
+      if (!client || client.tenantId !== req.tenant!.id) {
+        throw new Error('Acesso negado');
+      }
+      return tx.client.update({
+        where: { id },
+        data: validation.data
+      });
     });
     res.json(updated);
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message === 'Acesso negado') {
+      return res.status(403).json({ error: 'Acesso negado' }) as any;
+    }
     console.error(error);
     res.status(500).json({ error: 'Erro ao atualizar cliente' });
   }
@@ -507,8 +536,7 @@ app.get('/portal/:id', async (req, res) => {
 });
 
 // ─── OCR (PROTEGIDO) ────────────────────────────────────────────────────────
-app.post('/ocr', async (req: AuthRequest, res) => {
-  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+app.post('/ocr', rateLimitOCR, async (req: AuthRequest, res) => {
   if (!ocrClient) return res.status(503).json({ error: 'OCR não configurado' }) as any;
 
   const { image, mimeType } = req.body;
