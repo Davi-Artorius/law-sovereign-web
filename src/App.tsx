@@ -17,6 +17,7 @@ import { ClientCard } from './components/ClientCard';
 import { DetailPanel } from './components/DetailPanel';
 import { LoginScreen } from './components/LoginScreen';
 import { AdminPanel } from './components/AdminPanel';
+import { OnboardingModal } from './components/OnboardingModal';
 import { CapturePage } from './pages/CapturePage';
 import { PortalPage } from './pages/PortalPage';
 import { LandingPage } from './pages/LandingPage';
@@ -48,6 +49,8 @@ function AppInner() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
   const { userEmail, userRole } = (() => {
     const auth = sessionStorage.getItem('auth');
     if (auth) {
@@ -62,6 +65,21 @@ function AppInner() {
   })();
 
   const isAdmin = userRole === 'ADMIN';
+
+  // Check if user should see onboarding
+  useEffect(() => {
+    const auth = sessionStorage.getItem('auth');
+    if (auth) {
+      try {
+        const { hasSeenOnboarding } = JSON.parse(auth);
+        if (!hasSeenOnboarding) {
+          setShowOnboarding(true);
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+  }, []);
 
   // Validar expiração de JWT e fazer logout se expirado
   useEffect(() => {
@@ -314,6 +332,25 @@ function AppInner() {
     if (!window.confirm('Tem certeza que deseja sair?')) return;
     sessionStorage.removeItem('auth');
     window.location.reload();
+  }, []);
+
+  const handleOnboardingComplete = useCallback(async () => {
+    try {
+      await storage.markOnboardingSeen();
+
+      // Update sessionStorage
+      const auth = sessionStorage.getItem('auth');
+      if (auth) {
+        const parsed = JSON.parse(auth);
+        parsed.hasSeenOnboarding = true;
+        sessionStorage.setItem('auth', JSON.stringify(parsed));
+      }
+
+      setShowOnboarding(false);
+    } catch (err) {
+      console.error('Erro ao marcar onboarding como visto:', err);
+      setShowOnboarding(false);
+    }
   }, []);
 
   // ─── ANALYTICS (useMemo) ───────────────────────────────────────────────────
@@ -573,6 +610,9 @@ function AppInner() {
       {isAdminPanelOpen && (
         <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />
       )}
+
+      {/* Onboarding Modal */}
+      <OnboardingModal isOpen={showOnboarding} onComplete={handleOnboardingComplete} />
 
       {/* Modal Cadastro */}
       {isAddingClient && (

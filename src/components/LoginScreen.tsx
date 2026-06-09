@@ -26,14 +26,14 @@ export function LoginScreen({ onAuth }: LoginScreenProps) {
 
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      const { token, email: responseEmail } = response.data;
+      const { token, email: responseEmail, hasSeenOnboarding } = response.data;
 
       // Decodifica JWT para extrair role
       const payload = JSON.parse(atob(token.split('.')[1]));
       const role = payload.role || 'USER';
 
-      // Salva token, email e role no sessionStorage (limpa ao fechar aba)
-      sessionStorage.setItem('auth', JSON.stringify({ token, email: responseEmail, role }));
+      // Salva token, email, role e hasSeenOnboarding no sessionStorage (limpa ao fechar aba)
+      sessionStorage.setItem('auth', JSON.stringify({ token, email: responseEmail, role, hasSeenOnboarding }));
 
       // Configura axios para usar token em requisições futuras
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

@@ -69,5 +69,9 @@ export const storage = {
     const base64 = imageDataUrl.split(',')[1];
     const response = await axios.post(`${API_URL}/ocr`, { image: base64, mimeType: imageDataUrl.split(';')[0].split(':')[1] });
     return response.data;
+  },
+
+  markOnboardingSeen: async (): Promise<void> => {
+    await axios.post(`${API_URL}/onboarding/mark-seen`);
   }
 };

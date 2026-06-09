@@ -369,10 +369,27 @@ app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
     // Gera JWT com role
     const token = jwt.sign({ id: tenant.id, email: tenant.email, role: tenant.role }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
-    res.json({ token, tenantId: tenant.id, email: tenant.email });
+    res.json({ token, tenantId: tenant.id, email: tenant.email, hasSeenOnboarding: tenant.hasSeenOnboarding });
   } catch (error) {
     console.error('[LOGIN ERROR]', error);
     res.status(500).json({ error: 'Erro ao fazer login' });
+  }
+});
+
+// ─── ONBOARDING: Mark as seen ──────────────────────────────────────────────
+app.post('/onboarding/mark-seen', async (req: AuthRequest, res) => {
+  try {
+    if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+
+    await prisma.tenant.update({
+      where: { id: req.tenant.id },
+      data: { hasSeenOnboarding: true }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[ONBOARDING ERROR]', error);
+    res.status(500).json({ error: 'Erro ao atualizar status de onboarding' });
   }
 });
 
