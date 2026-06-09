@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { createClientSchema, updateClientSchema, createEventSchema, registerSchema, loginSchema } from './validation';
+import { createClientSchema, updateClientSchema, createEventSchema, registerSchema, loginSchema, uuidParamSchema } from './validation';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
@@ -91,6 +91,11 @@ const RATE_LIMIT_MAX = 5; // 5 tentativas
 const ocrRateLimitStore: Record<string, { count: number; timestamp: number }> = {};
 const OCR_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
 const OCR_RATE_LIMIT_MAX = 5; // 5 requisições por minuto
+
+// Rate limiting global por IP: { ip: { count, timestamp } }
+const globalRateLimitStore: Record<string, { count: number; timestamp: number }> = {};
+const GLOBAL_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
+const GLOBAL_RATE_LIMIT_MAX = 100; // 100 requisições por minuto por IP
 
 // ─── OCR via Gemini ────────────────────────────────────────────────────
 const OCR_MODEL = process.env.OCR_MODEL || 'gemini-2.5-flash';
@@ -196,6 +201,42 @@ const rateLimitOCR = (req: AuthRequest, res: Response, next: NextFunction) => {
 
   next();
 };
+
+// ─── MIDDLEWARE: RATE LIMITING GLOBAL (por IP) ────────────────────────────
+const rateLimitGlobal = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const ip = req.ip || 'unknown';
+  const now = Date.now();
+  const record = globalRateLimitStore[ip];
+
+  if (record && now - record.timestamp < GLOBAL_RATE_LIMIT_WINDOW) {
+    record.count++;
+    if (record.count > GLOBAL_RATE_LIMIT_MAX) {
+      return res.status(429).json({ error: 'Muitas requisições. Tente novamente em 1 minuto.' }) as any;
+    }
+  } else {
+    globalRateLimitStore[ip] = { count: 1, timestamp: now };
+  }
+
+  next();
+};
+
+// ─── SECURITY HEADERS ─────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  // HSTS: força HTTPS por 1 ano
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Previne clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Desabilita MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // XSS Protection (para navegadores antigos)
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Aplicar rate limit global (executa ANTES de tudo)
+app.use(rateLimitGlobal);
 
 // ─── DEBUG MIDDLEWARE ──────────────────────────────────────────────────────
 app.use((req: AuthRequest, res, next) => {
@@ -417,8 +458,14 @@ app.post('/clients', async (req: AuthRequest, res) => {
 });
 
 app.patch('/clients/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params as { id: string };
   if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+
+  // Validação UUID do path param
+  const paramValidation = uuidParamSchema.safeParse(req.params);
+  if (!paramValidation.success) {
+    return res.status(400).json({ error: 'ID inválido' }) as any;
+  }
+  const { id } = paramValidation.data;
 
   // Validação com Zod (partial)
   const validation = updateClientSchema.safeParse(req.body);
@@ -452,9 +499,16 @@ app.patch('/clients/:id', async (req: AuthRequest, res) => {
 });
 
 app.delete('/clients/:id', async (req: AuthRequest, res) => {
-  const { id } = req.params as { id: string };
+  if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
+
+  // Validação UUID do path param
+  const paramValidation = uuidParamSchema.safeParse(req.params);
+  if (!paramValidation.success) {
+    return res.status(400).json({ error: 'ID inválido' }) as any;
+  }
+  const { id } = paramValidation.data;
+
   try {
-    if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
     // Verifica se cliente pertence ao tenant
     const client = await prisma.client.findUnique({ where: { id } });

@@ -38,3 +38,8 @@ export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(1, 'Senha é obrigatória'),
 });
+
+// Validação de UUIDs em path params
+export const uuidParamSchema = z.object({
+  id: z.string().uuid('ID inválido')
+});

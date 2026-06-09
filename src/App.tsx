@@ -63,12 +63,44 @@ function AppInner() {
 
   const isAdmin = userRole === 'ADMIN';
 
+  // Validar expiração de JWT e fazer logout se expirado
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const auth = sessionStorage.getItem('auth');
+      if (!auth) return;
+
+      try {
+        const { token } = JSON.parse(auth);
+        if (!token) return;
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const expiryTime = payload.exp * 1000; // exp está em segundos, converter para ms
+        const now = Date.now();
+
+        if (now > expiryTime) {
+          // Token expirado: fazer logout
+          console.log('Token expirado, fazendo logout');
+          sessionStorage.removeItem('auth');
+          window.location.reload();
+        }
+      } catch (e) {
+        console.error('Erro ao validar token:', e);
+      }
+    };
+
+    // Verificar a cada 30 segundos
+    const interval = setInterval(checkTokenExpiry, 30000);
+    checkTokenExpiry(); // Verificar imediatamente ao carregar
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
     setLoading(true);
     const data = await storage.getClients();
     setClients(data);
-    
+
     // Maelstrom: Flatten events dos clientes para o estado local
     const allEvents = data.flatMap(c => (c as any).events || []);
     setEvents(allEvents);
