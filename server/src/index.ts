@@ -16,6 +16,8 @@ const port = process.env.PORT || 4000;
 async function syncDatabase() {
   try {
     console.log('⚡ Sincronizando schema do Prisma com banco...');
+
+    // Criar Tenant
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "Tenant" (
         "id" TEXT NOT NULL PRIMARY KEY,
@@ -25,9 +27,20 @@ async function syncDatabase() {
         "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✓ Tabela Tenant criada ou já existe');
+
+    // Adicionar tenantId à Client se não existir
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "tenantId" TEXT
+    `);
+
+    // Adicionar tenantId à TimelineEvent se não existir
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "TimelineEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT
+    `);
+
+    console.log('✓ Schema sincronizado');
   } catch (error) {
-    console.log('ℹ️  Info ao sincronizar:', (error as any)?.message?.substring(0, 100) || 'Schema sync executado');
+    console.log('ℹ️  Schema sync:', (error as any)?.message?.substring(0, 80) || 'OK');
   }
 }
 
