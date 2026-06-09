@@ -22,12 +22,12 @@ async function syncDatabase() {
         "email" TEXT NOT NULL UNIQUE,
         "passwordHash" TEXT NOT NULL,
         "name" TEXT NOT NULL,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('✓ Schema sincronizado');
+    console.log('✓ Tabela Tenant criada ou já existe');
   } catch (error) {
-    console.log('ℹ️  Schema já sincronizado ou erro esperado:', (error as any)?.message?.substring(0, 50));
+    console.log('ℹ️  Info ao sincronizar:', (error as any)?.message?.substring(0, 100) || 'Schema sync executado');
   }
 }
 
