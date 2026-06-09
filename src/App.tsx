@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import {
   Search, PlusCircle, Layers, LayoutGrid, Stethoscope,
-  X, ShieldCheck, BarChart2, Menu, Camera, FileText, Check, CheckCircle, Share2, AlertTriangle, LogOut
+  X, ShieldCheck, BarChart2, Menu, Camera, FileText, Check, CheckCircle, Share2, AlertTriangle, LogOut, Plus
 } from 'lucide-react';
 
 // Tipos e Constantes
