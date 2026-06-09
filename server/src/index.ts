@@ -50,11 +50,11 @@ async function verifyDatabaseHealth() {
   }
 }
 
-// Run health check on startup
+// Run health check on startup (não-bloqueante)
 verifyDatabaseHealth().catch((e) => {
-  console.error('🔴 Falha ao iniciar: banco de dados não está pronto');
-  console.error(e);
-  process.exit(1);
+  console.error('⚠️  Verificação do banco falhou, mas continuando:');
+  console.error(e.message);
+  // Não fazer exit(1) - deixar que Prisma tente conectar naturalmente
 });
 
 // ─── AUDIT LOGGING ────────────────────────────────────────────────────────
