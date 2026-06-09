@@ -16,110 +16,46 @@ const prisma = new PrismaClient({
   log: ['error', 'warn'],
 });
 
-// ─── REPAIR PRISMA MIGRATIONS ────────────────────────────────────────────
-async function repairMigrations() {
+// ─── VERIFY DATABASE HEALTH ─────────────────────────────────────────────
+async function verifyDatabaseHealth() {
   try {
-    console.log('🔧 Verificando integridade das migrations...');
+    console.log('⚡ Verificando integridade do banco...');
 
-    // Marca as migrações problemáticas como completas no Prisma
-    const problematicMigrations = [
-      '20260609041410_add_tenant_auth_multitenancy',
-    ];
+    // Test basic connectivity
+    await prisma.$queryRaw`SELECT 1`;
 
-    for (const migrationName of problematicMigrations) {
-      try {
-        // Verifica se a migration está marcada como failed
-        const status = await prisma.$queryRawUnsafe(
-          `SELECT * FROM "_prisma_migrations" WHERE migration = $1`,
-          migrationName
-        ) as any[];
+    // Verify critical tables exist
+    const tables = await prisma.$queryRaw`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+      AND table_name IN ('Tenant', 'Client', 'TimelineEvent', 'AuditLog')
+    ` as any[];
 
-        if (status.length > 0 && !status[0].finished_at) {
-          console.log(`⚠️  Migration ${migrationName} ainda não completou. Marcando como OK...`);
-          // Marca como completa
-          await prisma.$executeRawUnsafe(
-            `UPDATE "_prisma_migrations" SET finished_at = NOW(), success = true WHERE migration = $1`,
-            migrationName
-          );
-          console.log(`✓ ${migrationName} marcada como completa`);
-        }
-      } catch (e) {
-        // Tabela _prisma_migrations pode não existir ainda
-        console.log(`ℹ️  Verificação de migration skipped: ${(e as any).message.substring(0, 50)}`);
-      }
+    const tableNames = tables.map((t: any) => t.table_name);
+    const required = ['Tenant', 'Client', 'TimelineEvent', 'AuditLog'];
+    const missing = required.filter(t => !tableNames.includes(t));
+
+    if (missing.length > 0) {
+      console.error(`❌ ERRO CRÍTICO: Tabelas faltando: ${missing.join(', ')}`);
+      console.error('   Execute: npx prisma migrate deploy');
+      throw new Error(`Missing tables: ${missing.join(', ')}`);
     }
+
+    console.log('✓ Banco OK - todas as tabelas presentes');
   } catch (error) {
-    console.log('ℹ️  Migration repair:', (error as any)?.message?.substring(0, 80));
+    console.error('❌ Falha na verificação do banco:');
+    console.error((error as any)?.message || error);
+    throw error; // Falha fatal - não continua com servidor quebrado
   }
 }
 
-// ─── AUTO-SYNC DATABASE (Garante que o schema está sincronizado) ──────────
-async function syncDatabase() {
-  try {
-    console.log('⚡ Sincronizando schema do Prisma com banco...');
-
-    // Repara migrações falhadas primeiro
-    await repairMigrations();
-
-    // Criar Tenant
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "Tenant" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "email" TEXT NOT NULL UNIQUE,
-        "passwordHash" TEXT NOT NULL,
-        "name" TEXT NOT NULL,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Adicionar tenantId à Client se não existir
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Client" ADD COLUMN IF NOT EXISTS "tenantId" TEXT
-    `);
-
-    // Adicionar tenantId à TimelineEvent se não existir
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "TimelineEvent" ADD COLUMN IF NOT EXISTS "tenantId" TEXT
-    `);
-
-    // Adicionar role à Tenant se não existir
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "role" TEXT DEFAULT 'USER'
-    `);
-
-    // Se ainda houver registros em Client sem tenantId, preenche com um padrão
-    const clientsWithoutTenant = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) as count FROM "Client" WHERE "tenantId" IS NULL`
-    ) as any[];
-
-    if (clientsWithoutTenant[0].count > 0) {
-      console.log(`⚠️  ${clientsWithoutTenant[0].count} registros sem tenantId. Preenchendo...`);
-      await prisma.$executeRawUnsafe(
-        `UPDATE "Client" SET "tenantId" = 'default-tenant' WHERE "tenantId" IS NULL`
-      );
-      console.log('✓ Registros preenchidos');
-    }
-
-    // Se houver registros em TimelineEvent sem tenantId
-    const eventsWithoutTenant = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) as count FROM "TimelineEvent" WHERE "tenantId" IS NULL`
-    ) as any[];
-
-    if (eventsWithoutTenant[0].count > 0) {
-      console.log(`⚠️  ${eventsWithoutTenant[0].count} eventos sem tenantId. Preenchendo...`);
-      await prisma.$executeRawUnsafe(
-        `UPDATE "TimelineEvent" SET "tenantId" = 'default-tenant' WHERE "tenantId" IS NULL`
-      );
-      console.log('✓ Eventos preenchidos');
-    }
-
-    console.log('✓ Schema sincronizado');
-  } catch (error) {
-    console.log('ℹ️  Schema sync:', (error as any)?.message?.substring(0, 80) || 'OK');
-  }
-}
-
-syncDatabase();
+// Run health check on startup
+verifyDatabaseHealth().catch((e) => {
+  console.error('🔴 Falha ao iniciar: banco de dados não está pronto');
+  console.error(e);
+  process.exit(1);
+});
 
 // ─── AUDIT LOGGING ────────────────────────────────────────────────────────
 async function logAudit(tenantId: string, email: string, action: string, resourceType: string, resourceId: string, success: boolean, error?: string) {

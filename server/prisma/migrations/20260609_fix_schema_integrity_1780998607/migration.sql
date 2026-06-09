@@ -107,7 +107,7 @@ BEGIN
 END $$;
 
 -- 8. Populate tenantId for orphaned Client records (if any exist without tenantId)
-UPDATE "Client" SET "tenantId" = 'temp-tenant-' || "id" WHERE "tenantId" IS NULL LIMIT 1;
+UPDATE "Client" SET "tenantId" = 'temp-tenant-' || "id" WHERE "tenantId" IS NULL;
 
 -- 9. Make tenantId NOT NULL (safe now because we backfilled)
 ALTER TABLE "Client" ALTER COLUMN "tenantId" SET NOT NULL;
