@@ -12,27 +12,9 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 4000;
 
-// ─── FORCE PRISMA CLIENT REGENERATION ──────────────────────────────────────
-// Em produção, força a leitura do schema atualizado
-let prisma: PrismaClient;
-try {
-  // Força desconecção do cliente anterior (se houver)
-  if (global.prisma) {
-    console.log('⚠️  Desconectando Prisma anterior...');
-    global.prisma.$disconnect().catch(() => {});
-  }
-
-  // Cria novo cliente (vai regenerar com schema atualizado)
-  prisma = new PrismaClient({
-    log: ['error', 'warn'],
-  });
-
-  // Armazena globalmente para próxima iteração
-  (global as any).prisma = prisma;
-} catch (error) {
-  console.error('❌ Erro ao inicializar Prisma:', error);
-  process.exit(1);
-}
+const prisma = new PrismaClient({
+  log: ['error', 'warn'],
+});
 
 // ─── REPAIR PRISMA MIGRATIONS ────────────────────────────────────────────
 async function repairMigrations() {
