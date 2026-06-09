@@ -16,6 +16,7 @@ import { DashboardView } from './components/DashboardView';
 import { ClientCard } from './components/ClientCard';
 import { DetailPanel } from './components/DetailPanel';
 import { LoginScreen } from './components/LoginScreen';
+import { AdminPanel } from './components/AdminPanel';
 import { CapturePage } from './pages/CapturePage';
 import { PortalPage } from './pages/PortalPage';
 import { LandingPage } from './pages/LandingPage';
@@ -46,6 +47,7 @@ function AppInner() {
   const [clients, setClients] = useState<Client[]>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
 
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
@@ -409,6 +411,12 @@ function AppInner() {
             </div>
           </div>
           <button
+            onClick={() => setIsAdminPanelOpen(true)}
+            className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-gold/10 border border-gold/30 text-gold text-xs font-bold uppercase tracking-wider hover:bg-gold/20 transition-all active:scale-95"
+          >
+            <Plus size={14} /> Registrar Cliente
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider hover:bg-red-500/20 hover:border-red-500/50 transition-all active:scale-95"
           >
@@ -512,6 +520,11 @@ function AppInner() {
           )}
         </div>
       </main>
+
+      {/* Admin Panel */}
+      {isAdminPanelOpen && (
+        <AdminPanel onClose={() => setIsAdminPanelOpen(false)} />
+      )}
 
       {/* Modal Cadastro */}
       {isAddingClient && (
