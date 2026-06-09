@@ -91,13 +91,14 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ─── JWT SECRET ────────────────────────────────────────────────────────────
-const JWT_SECRET = process.env.JWT_SECRET || process.env.INTERNAL_API_KEY;
-if (!JWT_SECRET || JWT_SECRET === 'dev-secret-insecure') {
+const JWT_SECRET_RAW = process.env.JWT_SECRET || process.env.INTERNAL_API_KEY;
+if (!JWT_SECRET_RAW || JWT_SECRET_RAW === 'dev-secret-insecure') {
   console.error('❌ ERRO CRÍTICO: JWT_SECRET não configurado em produção!');
   if (process.env.NODE_ENV === 'production') {
     process.exit(1);
   }
 }
+const JWT_SECRET: string = JWT_SECRET_RAW || 'dev-secret';
 const JWT_EXPIRY = '7d';
 
 // ─── MIDDLEWARE: JWT VALIDATION ────────────────────────────────────────────
