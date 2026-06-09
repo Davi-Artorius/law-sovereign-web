@@ -48,7 +48,7 @@ function AppInner() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState(() => {
+  const userEmail = (() => {
     const auth = localStorage.getItem('auth');
     if (auth) {
       try {
@@ -59,7 +59,7 @@ function AppInner() {
       }
     }
     return 'Usuário';
-  });
+  })();
 
   // Maelstrom: Sincronização Inicial com o PostgreSQL
   const fetchData = useCallback(async () => {
