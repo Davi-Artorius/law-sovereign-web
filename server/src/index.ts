@@ -326,22 +326,17 @@ app.post('/auth/login', rateLimitLogin, async (req: AuthRequest, res) => {
 
 // ─── ADMIN: NUKE ──────────────────────────────────────────────────────────
 app.post('/admin/nuke', requireAdmin, async (req: AuthRequest, res) => {
+  const adminEmail = req.tenant!.email;
+  const adminTenantId = req.tenant!.id;
+
   try {
+    // Log ANTES de deletar (para manter o registro)
+    await logAudit(adminTenantId, adminEmail, 'NUKE', 'SYSTEM', 'all_data', true);
+
+    // Agora deleta tudo
     await prisma.timelineEvent.deleteMany({});
     await prisma.client.deleteMany({});
     await prisma.tenant.deleteMany({});
-
-    // Log crítico: NUKE apaga TUDO
-    await prisma.auditLog.create({
-      data: {
-        tenantId: 'SYSTEM',
-        email: req.tenant!.email,
-        action: 'NUKE',
-        resourceType: 'SYSTEM',
-        resourceId: 'all_data',
-        success: true
-      }
-    });
 
     res.json({ success: true, message: '☢️ All data nuked' });
   } catch (error) {
