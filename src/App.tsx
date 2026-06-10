@@ -158,13 +158,46 @@ function AppInner() {
     return () => { cancelled = true; };
   }, [selectedId]);
 
+  const compressImage = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 800;
+        const maxHeight = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = dataUrl;
+    });
+  };
+
   const handleOCR = useCallback(async (file: File) => {
     setOcrLoading(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
       try {
-        const result = await storage.runOCR(dataUrl);
+        const compressedDataUrl = await compressImage(dataUrl);
+        const result = await storage.runOCR(compressedDataUrl);
         if (result.name) setNewClientName(result.name);
         if (result.area && AREAS.includes(result.area as any)) setNewClientArea(result.area);
         if (result.case) setNewClientCase(result.case);
