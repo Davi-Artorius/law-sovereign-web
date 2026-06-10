@@ -707,9 +707,10 @@ Extraia os seguintes campos:
 - name: Nome completo do cliente
 - phone: Telefone/WhatsApp (qualquer formato)
 - area: Área jurídica — EXATAMENTE uma de: Civil, Trabalhista, Previdenciário, Criminal, Família, Imobiliário, Empresarial, Consumidor, Tributário, Administrativo
-- case: Descrição breve do caso em 1-2 frases em português
+- case: Descrição breve do caso em NO MÁXIMO 2 frases curtas em português. NUNCA copie o documento inteiro. Resuma.
 
-Responda APENAS com JSON válido, sem markdown. Use null para campos não identificados.`
+Responda APENAS com JSON válido, sem markdown. Use null para campos não identificados.
+IMPORTANTE: O campo "case" deve ter no máximo 200 caracteres. Seja conciso.`
           },
           {
             type: 'image_url',
@@ -717,11 +718,40 @@ Responda APENAS com JSON válido, sem markdown. Use null para campos não identi
           }
         ]
       }],
-      max_tokens: 500
+      max_tokens: 1000
     });
 
     const text = response.choices[0]?.message?.content || '{}';
-    const extracted = JSON.parse(text.replace(/```json\n?|\n?```/g, ''));
+    const cleaned = text.replace(/```json\n?|\n?```/g, '').trim();
+
+    let extracted;
+    try {
+      extracted = JSON.parse(cleaned);
+    } catch (parseErr) {
+      // Gemini devolveu JSON malformado ou truncado.
+      // Tenta extrair campos individualmente via regex como fallback.
+      console.error('JSON.parse falhou, tentando fallback regex. Texto:', cleaned.slice(0, 200));
+      const grab = (key: string) => {
+        const m = cleaned.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+        return m ? m[1].replace(/\\"/g, '"').replace(/\\n/g, ' ') : null;
+      };
+      extracted = {
+        name: grab('name'),
+        phone: grab('phone'),
+        area: grab('area'),
+        case: grab('case'),
+      };
+      // Se nem o nome saiu, é falha real
+      if (!extracted.name && !extracted.area && !extracted.case) {
+        return res.status(422).json({ error: 'Não foi possível ler o documento. Tente uma foto mais nítida.' }) as any;
+      }
+    }
+
+    // Trava de segurança: case nunca passa de 300 chars (evita dump do documento inteiro)
+    if (extracted.case && typeof extracted.case === 'string' && extracted.case.length > 300) {
+      extracted.case = extracted.case.slice(0, 300).trim() + '...';
+    }
+
     res.json(extracted);
   } catch (error) {
     console.error(error);
