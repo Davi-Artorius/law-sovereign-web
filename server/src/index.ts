@@ -39,6 +39,26 @@ async function syncDatabaseSchema() {
     `;
     console.log('✓ Índices OK');
 
+    // Ensure AuditLog table exists (migration drift safety net)
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "AuditLog" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "tenantId" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "action" TEXT NOT NULL,
+        "resourceType" TEXT NOT NULL,
+        "resourceId" TEXT NOT NULL,
+        "success" BOOLEAN NOT NULL DEFAULT true,
+        "error" TEXT,
+        "metadata" JSONB,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "AuditLog_tenantId_idx" ON "AuditLog"("tenantId");`;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");`;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "AuditLog_email_idx" ON "AuditLog"("email");`;
+    console.log('✓ Tabela AuditLog OK');
+
     console.log('✅ Schema sincronizado');
   } catch (e) {
     console.warn('⚠️  Falha ao sincronizar schema:', (e as any).message);
