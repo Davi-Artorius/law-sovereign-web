@@ -706,7 +706,7 @@ app.post('/ocr', rateLimitOCR, async (req: AuthRequest, res) => {
 Extraia os seguintes campos:
 - name: Nome completo do cliente
 - phone: Telefone/WhatsApp (qualquer formato)
-- area: Área jurídica — EXATAMENTE uma de: Civil, Trabalhista, Previdenciário, Criminal, Família, Imobiliário, Empresarial, Consumidor, Tributário, Administrativo
+- area: Área jurídica — EXATAMENTE uma de: Civil, Trabalhista, Criminal, Comercial, Tributário, Imobiliário (se não encaixar perfeitamente, use Civil)
 - case: Descrição breve do caso em NO MÁXIMO 2 frases curtas em português. NUNCA copie o documento inteiro. Resuma.
 
 Responda APENAS com JSON válido, sem markdown. Use null para campos não identificados.

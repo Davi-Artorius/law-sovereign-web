@@ -4,7 +4,7 @@ export const createClientSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório').max(255),
   status: z.enum(['TRIAGEM', 'PROPOSTA', 'CONTRATO', 'ATIVO', 'DESFECHO', 'ENCAMINHADOS', 'INATIVOS']).default('TRIAGEM'),
   lastAction: z.string().max(255).default(''),
-  case: z.string().max(1000).default(''),
+  case: z.string().max(5000).default(''),
   area: z.enum(['Civil', 'Trabalhista', 'Criminal', 'Comercial', 'Tributário', 'Imobiliário']),
   chanceOfSuccess: z.number().int().min(0).max(100).optional(),
   costOfWaiting: z.number().min(0).optional(),
