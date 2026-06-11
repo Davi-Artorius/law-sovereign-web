@@ -3,3 +3,6 @@ node_modules
 .env
 
 /generated/prisma
+
+# Backups do banco contêm dados de cliente (PII) — nunca versionar
+backups/
