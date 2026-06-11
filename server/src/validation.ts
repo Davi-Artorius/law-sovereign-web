@@ -18,9 +18,9 @@ export const updateClientSchema = createClientSchema.partial();
 
 export const createEventSchema = z.object({
   clientId: z.string().uuid('clientId deve ser um UUID válido'),
-  type: z.enum(['NOTA', 'DOCUMENTO', 'LIGAÇÃO', 'EMAIL', 'REUNIÃO', 'AÇÃO']),
+  type: z.string().min(1).max(50),
   content: z.string().min(1, 'Conteúdo é obrigatório').max(5000),
-  date: z.string().datetime('Data deve ser ISO 8601'),
+  date: z.string().min(1).max(50),
   attachment: z.object({
     type: z.string(),
     name: z.string().max(255),
