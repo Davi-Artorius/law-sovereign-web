@@ -59,6 +59,12 @@ async function syncDatabaseSchema() {
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "AuditLog_email_idx" ON "AuditLog"("email");`;
     console.log('✓ Tabela AuditLog OK');
 
+    // Ensure TimelineEvent soft-delete column exists
+    await prisma.$executeRaw`
+      ALTER TABLE "TimelineEvent" ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMP(3);
+    `;
+    console.log('✓ Coluna TimelineEvent.deletedAt OK');
+
     console.log('✅ Schema sincronizado');
   } catch (e) {
     console.warn('⚠️  Falha ao sincronizar schema:', (e as any).message);
@@ -421,6 +427,12 @@ app.post('/onboarding/mark-seen', async (req: AuthRequest, res) => {
 
 // ─── ADMIN: NUKE ──────────────────────────────────────────────────────────
 app.post('/admin/nuke', requireAdmin, async (req: AuthRequest, res) => {
+  // Trava de segurança: nuke total só roda se explicitamente habilitado por env.
+  // Em produção ALLOW_NUKE não existe → 403. Evita zerar o banco por acidente.
+  if (process.env.ALLOW_NUKE !== 'true') {
+    return res.status(403).json({ error: 'Operação desabilitada. Defina ALLOW_NUKE=true para habilitar.' }) as any;
+  }
+
   const adminEmail = req.tenant!.email;
   const adminTenantId = req.tenant!.id;
 
@@ -465,7 +477,7 @@ app.get('/clients/:id/events', async (req: AuthRequest, res) => {
     if (!req.tenant) return res.status(401).json({ error: 'Não autenticado' }) as any;
 
     const events = await prisma.timelineEvent.findMany({
-      where: { clientId: id, tenantId: req.tenant.id }
+      where: { clientId: id, tenantId: req.tenant.id, deletedAt: null }
     });
     res.json(events);
   } catch (error) {
@@ -631,7 +643,8 @@ app.delete('/events/:id', async (req: AuthRequest, res) => {
       return res.status(403).json({ error: 'Acesso negado' }) as any;
     }
 
-    await prisma.timelineEvent.delete({ where: { id } });
+    // Soft delete: marca como deletado mas mantém os dados (igual Client)
+    await prisma.timelineEvent.update({ where: { id }, data: { deletedAt: new Date() } });
     res.json({ success: true });
   } catch (error) {
     console.error(error);

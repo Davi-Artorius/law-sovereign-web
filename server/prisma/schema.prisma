@@ -50,6 +50,7 @@ model TimelineEvent {
   type       String
   content    String
   attachment Json?
+  deletedAt  DateTime? // Soft delete: mantém o registro para auditoria/recuperação
 
   @@index([tenantId])
   @@index([clientId])
